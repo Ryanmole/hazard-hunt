@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hazard Hunt: Safe Session Planning</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0f2742;--lime:#b6f03c;--ink:#16202b;--mut:#5b6b7c;--bg:#f3f6fa;--card:#fff;--line:#dfe6ee;--green:#1e9e57;--amber:#e69b00;--red:#d63031}
+*{box-sizing:border-box}
+body{margin:0;font-family:Lexend,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit}
+.top{background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;position:sticky;top:0;z-index:20}
+.top b{font-weight:800;letter-spacing:.2px}.top b span{color:var(--lime)}
+.top button{background:#ffffff1a;color:#fff;border:0;border-radius:999px;padding:6px 14px;cursor:pointer}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.hero{background:linear-gradient(135deg,#0f2742,#1d4f7a);color:#fff;border-radius:20px;padding:22px}
+.hero h1{margin:0 0 6px;font-size:clamp(24px,5vw,36px);line-height:1.1}
+.hero p{margin:0;opacity:.9}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.step{background:#ffffff14;border-radius:14px;padding:10px;font-size:14px}.step b{display:block;color:var(--lime);font-size:18px}
+h2{font-size:20px;margin:22px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.sc{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:transform .15s}
+.sc:hover{transform:translateY(-2px)}
+.sc svg{display:block;width:100%;height:auto;background:#ccc}
+.sc div{padding:10px 12px}.sc small{color:var(--mut);display:block}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;background:var(--navy);color:#fff}
+.btn.lime{background:var(--lime);color:var(--navy)}.btn.ghost{background:#fff;color:var(--navy);border:2px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.tool{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;text-align:left}
+.tool b{display:block;font-size:17px}.tool small{color:var(--mut)}
+.bar{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.bar h1{font-size:20px;margin:0}.bar p{margin:2px 0 0;color:var(--mut);font-size:14px}
+.stats{display:flex;gap:6px;flex-wrap:wrap}
+.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:600;font-size:14px;white-space:nowrap}
+.stage{position:relative;border-radius:16px;overflow:hidden;box-shadow:0 6px 20px #0f274222;background:#000}
+.stage svg{display:block;width:100%;height:auto;cursor:crosshair;touch-action:manipulation}
+.live{position:absolute;top:10px;left:10px;background:#d63031;color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:1px}
+.live::before{content:"";display:inline-block;width:7px;height:7px;background:#fff;border-radius:50%;margin-right:5px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.bob{animation:bob 1.1s ease-in-out infinite;transform-box:fill-box}
+.bob2{animation:bob2 2.2s ease-in-out infinite}
+.sway{animation:sway 3s ease-in-out infinite alternate}.sway2{animation:sway 2.4s ease-in-out infinite alternate-reverse}
+@keyframes bob{50%{transform:translateY(-22px)}}@keyframes bob2{50%{transform:translateY(5px)}}@keyframes sway{to{transform:translateX(26px)}}
+.miss{animation:fade 1s forwards}@keyframes fade{to{opacity:0}}
+.hintring{animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.25}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{background:#e6f8ee;color:#126b3b;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+.card h2{margin:6px 0 10px}
+.mini{border-radius:12px;overflow:hidden;margin-bottom:10px}.mini svg{display:block;width:100%;height:auto}
+.tag{display:inline-block;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;margin-right:4px;text-transform:uppercase;letter-spacing:.5px}
+.t-cat{background:#e8eef6;color:var(--navy)}.t-found{background:#e6f8ee;color:#126b3b}.t-miss{background:#fde8e8;color:#a42020}
+details{background:#f6f9fc;border-radius:12px;padding:10px 12px;margin:10px 0}
+summary{cursor:pointer;font-weight:600}
+h3{font-size:16px;margin:16px 0 8px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg button{border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 4px;cursor:pointer;font-weight:600}
+.seg button small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.seg button.on{border-color:var(--navy);background:var(--navy);color:#fff}.seg button.on small{color:#cfe0f2}
+.riskbox{margin-top:10px;padding:10px 12px;border-radius:12px;font-weight:700;color:#fff}
+.opts{display:grid;gap:8px}
+.opt{border:2px solid var(--line);background:#fff;border-radius:12px;padding:12px;text-align:left;cursor:pointer}
+.opt:disabled{color:var(--ink);cursor:default}.opt.ok{border-color:var(--green);background:#e6f8ee}.opt.bad{border-color:var(--red);background:#fde8e8}
+.fb{margin-top:10px;padding:12px;border-radius:12px;background:#f6f9fc}
+textarea,input[type=text],select{width:100%;border:2px solid var(--line);border-radius:10px;padding:9px;background:#fff}
+textarea{min-height:60px}
+table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
+th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}th{background:#eef3f8}
+.tablewrap{overflow-x:auto;border-radius:12px}
+.badge{display:inline-block;color:#fff;border-radius:8px;padding:2px 8px;font-weight:700;font-size:13px;white-space:nowrap}
+.big{font-size:44px;font-weight:800;color:var(--navy);margin:4px 0}
+.prow{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:grid;gap:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.three{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+label{font-size:13px;font-weight:600;color:var(--mut)}
+.checks label{display:flex;gap:8px;align-items:center;color:var(--ink);font-weight:400;font-size:15px;padding:4px 0}
+.photo{position:relative;border-radius:14px;overflow:hidden;cursor:crosshair}.photo img{display:block;width:100%}
+.pin{position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:#d63031;color:#fff;font-weight:800;display:grid;place-items:center;border:3px solid #fff;box-shadow:0 2px 6px #0006;pointer-events:none}
+.matrix td{text-align:center;font-weight:700;color:#fff}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;transition:transform .25s;z-index:200;box-shadow:0 6px 20px #0005;max-width:90vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:#0008;display:grid;place-items:center;z-index:60;padding:16px}
+.modal .card{max-width:640px;width:100%}
+.note{font-size:14px;color:var(--mut)}
+.sheet{max-height:92vh;overflow:auto;width:100%;max-width:680px;position:relative}
+.xwrap{position:sticky;top:0;height:0;z-index:5;display:flex;justify-content:flex-end}.xbtn{margin:6px 6px 0 0;width:40px;height:40px;border-radius:50%;border:0;background:#0f2742;color:#fff;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px #0004}
+.modal{align-items:start;overflow:auto}
+.tw{position:relative}.tw textarea{padding-right:50px;min-height:80px}
+.mic{position:absolute;right:8px;bottom:10px;border:0;border-radius:50%;width:40px;height:40px;background:#eef3f8;font-size:18px;cursor:pointer}.mic.on{background:#d63031;animation:pulse 1s infinite}
+.wc.err{color:#fff!important;background:#d63031;padding:6px 10px;border-radius:8px;font-size:14px;font-weight:600}.shake{animation:shake .4s}@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}textarea.bad{border-color:#d63031}
+.wc{display:block;color:var(--mut);margin:4px 0 0;font-size:12px}
+.ans{background:#f6f9fc;border-left:4px solid var(--navy);padding:8px 12px;border-radius:8px;margin:6px 0}
+.model{background:#eefaf3;border-left:4px solid var(--green);padding:8px 12px;border-radius:8px;margin:8px 0;font-size:15px}
+.crit{list-style:none;padding:0;margin:6px 0}.crit li{padding:2px 0}
+.warn{background:#fff4e0;border-radius:8px;padding:8px 10px;margin:8px 0}
+.starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.starters button{border:1px dashed var(--navy);background:#fff;border-radius:999px;padding:5px 10px;font-size:13px;cursor:pointer}
+.ladder{display:grid;gap:6px}.ladder button{text-align:left;border:2px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}.ladder button small{color:var(--mut);margin-left:6px}.ladder button.on{border-color:var(--navy);background:var(--navy);color:#fff}.ladder button.on small{color:#cfe0f2}
+.claude{background:#f3efff;border-left:4px solid #7c5cd6;padding:8px 12px;border-radius:8px;margin-top:8px}
+.player{display:flex;align-items:center;gap:10px;background:#0f2742;color:#fff;padding:8px 12px;border-radius:0 0 16px 16px;margin-top:-8px;position:relative;z-index:1}
+.pbtn{background:var(--lime);color:var(--navy);border:0;border-radius:50%;width:42px;height:42px;font-size:18px;font-weight:800;cursor:pointer;flex:none}.pbtn.sm{border-radius:999px;width:auto;padding:0 12px;height:34px;font-size:13px;background:#ffffff22;color:#fff}
+.track{flex:1;height:10px;background:#ffffff33;border-radius:999px;position:relative;cursor:pointer}.fill{height:100%;background:var(--lime);border-radius:999px;width:0}
+.tick{position:absolute;top:-4px;width:6px;height:18px;background:#00e676;border-radius:3px;transform:translateX(-3px)}
+#ct{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.photo video{display:block;width:100%}.ov{position:absolute;inset:0;display:none;cursor:crosshair}.ov.on{display:block;background:#ffd40014;outline:4px dashed #ffd400;outline-offset:-4px}
+#pinlayer{position:absolute;inset:0;pointer-events:none}
+label.tick{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-weight:400;font-size:15px;padding:4px 0;position:static;width:auto;height:auto;background:none}
+.chip{border:0;cursor:pointer}
+@media(max-width:600px){.steps{grid-template-columns:1fr}.two{grid-template-columns:1fr}main{padding:12px}}
+</style>
+</head>
+<body>
+<div class="top"><b>Hazard <span>Hunt</span></b><button id="homeBtn">🏠 Home</button></div>
+<main id="app"></main>
+<div id="toast"></div>
+<script>
+const R=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join('');
+const LN=['','Unlikely','Possible','Likely'],SN=['','Minor','Moderate','Serious'];
+const LD=['','Could happen, but rarely','Could happen sometimes','Will probably happen'],SD=['','Bruise, graze','Sprain, cut, first aid','Fracture, head/spinal, hospital'];
+const band=r=>r<=2?['Low','#1e9e57']:r<=4?['Medium','#e69b00']:['High','#d63031'];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- drawing helpers ---------- */
+function P(x,y,c,o={}){const s=o.s||1,sk=o.skin||'#f1c27d',sh=o.shorts||'#1f2a3a',f=o.face||1,hair=o.hair||'#3b2a1a',ph=o.ph??0;
+ let lA,lB,rA,rB,aL,bL,aR,bR;
+ if(o.run){const p=o.ph??0.9;lA=0.75*Math.sin(p);rA=-lA;lB=0.2+1.0*Math.max(0,Math.sin(p+1.7));rB=0.2+1.0*Math.max(0,Math.sin(p+1.7+Math.PI));aL=-0.8*Math.sin(p);aR=-aL;bL=1.3;bR=1.3}
+ else if(o.throw){lA=-.35;rA=.4;lB=.15;rB=.25;aL=-1.3;bL=-.2;aR=Math.PI-.35;bR=.25}
+ else if(o.dive){lA=0;rA=0;lB=0;rB=0;aL=Math.PI;aR=Math.PI;bL=0;bR=0}
+ else if(o.jump){lA=.35;rA=-.15;lB=1.1;rB=.8;aL=Math.PI-.5;aR=Math.PI-.2;bL=0;bR=0}
+ else{const w=0.06*Math.sin(ph*.6);lA=-.1+w;rA=.1-w;lB=.08;rB=.08;aL=.1;aR=-.06;bL=.15;bR=.12}
+ if(o.rk!=null){aR=o.rk;bR=.25}
+ const leg=(hx,a,b,back)=>{const kx=hx+Math.sin(a)*17,ky=44+Math.cos(a)*17,fx=kx+Math.sin(a-b)*17,fy=ky+Math.cos(a-b)*17,tx=hx+Math.sin(a)*7,ty=44+Math.cos(a)*7;
+  return `<g stroke-linecap="round" fill="none"><path d="M${hx} 44 L${kx.toFixed(1)} ${ky.toFixed(1)} L${fx.toFixed(1)} ${fy.toFixed(1)}" stroke="${sk}" stroke-width="7.5" stroke-linejoin="round"/><path d="M${(kx+(fx-kx)*.62).toFixed(1)} ${(ky+(fy-ky)*.62).toFixed(1)} L${fx.toFixed(1)} ${fy.toFixed(1)}" stroke="#f4f4f4" stroke-width="8"/><line x1="${hx}" y1="43" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${sh}" stroke-width="11"/>${back?`<path d="M${hx} 44 L${kx.toFixed(1)} ${ky.toFixed(1)} L${fx.toFixed(1)} ${fy.toFixed(1)}" stroke="#000" stroke-opacity=".14" stroke-width="7.5" stroke-linejoin="round"/>`:''}</g><ellipse cx="${(fx+3.5).toFixed(1)}" cy="${(fy+1.5).toFixed(1)}" rx="7" ry="3.8" fill="#222"/>`};
+ const arm=(sx,a,b,back,rk)=>{const ex=sx+Math.sin(a)*13,ey=17+Math.cos(a)*13,hx=ex+Math.sin(a+b)*12,hy=ey+Math.cos(a+b)*12;let r='';
+  if(rk){const d=a+b,ux=Math.sin(d),uy=Math.cos(d),cx=hx+ux*34,cy=hy+uy*34;r=`<line x1="${hx.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${(hx+ux*24).toFixed(1)}" y2="${(hy+uy*24).toFixed(1)}" stroke="#444" stroke-width="2.6"/><ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="7.5" ry="11" transform="rotate(${(-d*180/Math.PI).toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="#ffffff30" stroke="#e74c3c" stroke-width="2.6"/>`}
+  return `<path d="M${sx} 17 L${ex.toFixed(1)} ${ey.toFixed(1)} L${hx.toFixed(1)} ${hy.toFixed(1)}" stroke="${sk}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M${sx} 17 L${(sx+Math.sin(a)*7).toFixed(1)} ${(17+Math.cos(a)*7).toFixed(1)}" stroke="${c}" stroke-width="9" stroke-linecap="round"/>${back?`<path d="M${sx} 17 L${ex.toFixed(1)} ${ey.toFixed(1)} L${hx.toFixed(1)} ${hy.toFixed(1)}" stroke="#000" stroke-opacity=".14" stroke-width="6" stroke-linecap="round" fill="none"/>`:''}<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="3.3" fill="${sk}"/>${r}`};
+ const shadow=(!o.rot&&!o.noshadow)?`<ellipse cx="${x}" cy="${y+81*s}" rx="${17*s}" ry="${4.5*s}" fill="#000" opacity=".2"/>`:'';
+ return `${shadow}<g transform="translate(${x} ${y}) scale(${s})${o.rot?` rotate(${o.rot})`:''}"><g transform="scale(${f} 1)${o.run&&!o.rot?' rotate(8)':''}">
+ ${arm(-2,aL,bL,1)}${leg(-4,lA,lB,1)}
+ <path d="M-11 15 Q0 10 11 15 L9 41 Q0 44 -9 41 Z" fill="${c}"/><path d="M4 13 Q10 14 11 15 L9 41 Q6 43 3 43 Z" fill="#000" opacity=".12"/>
+ <rect x="-11" y="38" width="22" height="9" rx="4" fill="${sh}"/>
+ ${leg(4,rA,rB,0)}${arm(3,aR,bR,0,o.rk!=null)}
+ <rect x="-3" y="7" width="6" height="7" fill="${sk}"/><circle r="10" fill="${sk}"/><circle cx="-2" cy="1" r="2.4" fill="#000" opacity=".08"/>
+ <path d="M-10 0 A10 10 0 0 1 10 -1 Q8 -7 2 -9 Q-6 -11 -10 -4 Z" fill="${hair}"/><path d="M-10 -2 Q-12 4 -8 6 L-6 0Z" fill="${hair}"/>
+ <circle cx="5.5" cy="-1" r="1.4" fill="#222"/>
+ ${o.jew?'<path d="M-6 12 q6 9 12 0" stroke="#f5c400" stroke-width="2.5" fill="none"/><circle cx="-1" cy="5" r="2.6" fill="#f5c400"/>':''}
+ ${o.whistle?'<line x1="0" y1="13" x2="2" y2="26" stroke="#222" stroke-width="1.5"/><rect x="0" y="25" width="7" height="5" rx="1" fill="#bbb"/>':''}
+ ${o.throw?`<circle cx="${(3+Math.sin(aR)*13+Math.sin(aR+bR)*12).toFixed(1)}" cy="${(17+Math.cos(aR)*13+Math.cos(aR+bR)*12-5).toFixed(1)}" r="7" fill="#555"/>`:''}
+ </g></g>`}
+const ball=(x,y,r,c,cls='')=>`<circle class="${cls}" cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="#0003" stroke-width="2"/>`;
+const bench=(x,y,w)=>`<g><rect x="${x+8}" y="${y+8}" width="9" height="22" fill="#6b4420"/><rect x="${x+w-17}" y="${y+8}" width="9" height="22" fill="#6b4420"/><rect x="${x}" y="${y}" width="${w}" height="12" rx="3" fill="#8b5a2b"/></g>`;
+const bag=(x,y,c)=>`<g><path d="M${x+9} ${y} a8 8 0 0 1 16 0" stroke="${c}" fill="none" stroke-width="3"/><rect x="${x}" y="${y}" width="34" height="24" rx="6" fill="${c}"/></g>`;
+const cone=(x,y)=>`<g><polygon points="${x-9},${y} ${x+9},${y} ${x+3},${y-22} ${x-3},${y-22}" fill="#ff7a00"/><rect x="${x-12}" y="${y}" width="24" height="4" fill="#d35f00"/></g>`;
+
+/* ---------- scenes ---------- */
+function s1(){return `
+<rect width="800" height="195" fill="#efe6d6"/>
+${R(5,i=>`<rect x="${140+i*95}" y="22" width="62" height="40" rx="3" fill="#cfe8f7" stroke="#b8a98f" stroke-width="3"/>`)}
+<g stroke="#a8743c" stroke-width="5">${R(6,i=>`<line x1="${22+i*13}" y1="58" x2="${22+i*13}" y2="195"/>`)}</g>
+<g stroke="#a8743c" stroke-width="3">${R(10,i=>`<line x1="18" y1="${70+i*13}" x2="92" y2="${70+i*13}"/>`)}</g>
+<rect x="660" y="70" width="84" height="125" fill="#93a6ba" stroke="#6d7f92" stroke-width="3"/>
+<rect x="672" y="44" width="60" height="20" rx="3" fill="#159447"/><text x="702" y="59" font-size="13" font-weight="800" fill="#fff" text-anchor="middle" font-family="Lexend,sans-serif">EXIT</text>
+<rect y="195" width="800" height="305" fill="#e3b97c"/>
+${R(8,i=>`<line x1="0" y1="${215+i*38}" x2="800" y2="${215+i*38}" stroke="#d3a364" stroke-width="2"/>`)}
+<rect x="60" y="232" width="680" height="250" fill="none" stroke="#fff" stroke-width="3"/>
+<line x1="400" y1="232" x2="400" y2="482" stroke="#fff" stroke-width="3"/>
+<circle cx="400" cy="357" r="45" fill="none" stroke="#d33" stroke-width="3"/>
+<g><rect x="656" y="134" width="94" height="17" rx="4" fill="#3575e0"/><rect x="652" y="151" width="100" height="17" rx="4" fill="#2a66d0"/><rect x="648" y="168" width="108" height="17" rx="4" fill="#1f56b8"/><rect x="645" y="185" width="114" height="17" rx="4" fill="#1a4aa0"/></g>
+${bag(95,208,'#c0392b')}${bag(132,214,'#2c3e50')}${bag(170,206,'#8e44ad')}<ellipse cx="215" cy="230" rx="22" ry="9" fill="#16a085"/>
+${bench(250,375,150)}
+<ellipse cx="548" cy="440" rx="50" ry="13" fill="#7cc8f2" opacity=".8"/><ellipse cx="532" cy="437" rx="15" ry="3" fill="#fff" opacity=".8"/>
+<rect x="590" y="432" width="32" height="14" rx="6" fill="#2e86de"/>
+${P(720,252,'#16324f',{whistle:1,hair:'#4a3020'})}
+<g class="sway">${P(210,262,'#e74c3c',{run:1,hair:'#2b1b10'})}</g>
+${P(430,262,'#27ae60',{jew:1,hair:'#d9a441',skin:'#e0ac69'})}
+<g class="sway2">${P(575,300,'#e74c3c',{run:1,skin:'#8d5524',hair:'#1b1b1b'})}</g>
+${P(150,330,'#27ae60',{skin:'#c68642',hair:'#1b1b1b'})}
+${ball(480,405,11,'#e74c3c','bob')}${ball(660,455,11,'#f1c40f')}`}
+
+function s2(){return `
+<rect width="800" height="215" fill="#bfe3ff"/>
+<g fill="#fff" opacity=".9"><ellipse cx="170" cy="60" rx="50" ry="20"/><ellipse cx="205" cy="48" rx="35" ry="20"/><ellipse cx="330" cy="92" rx="42" ry="14"/></g>
+<g><ellipse cx="600" cy="70" rx="60" ry="32" fill="#59626e"/><ellipse cx="655" cy="56" rx="52" ry="34" fill="#4b535e"/><ellipse cx="640" cy="88" rx="72" ry="26" fill="#3d444d"/><polygon points="640,96 621,142 638,139 625,178 663,124 645,127 658,96" fill="#ffd400"/></g>
+${R(10,i=>`<ellipse cx="${i*85+20}" cy="207" rx="55" ry="26" fill="${i%2?'#3f8f3a':'#357d31'}"/>`)}
+<rect y="210" width="800" height="290" fill="#6dbb4f"/>
+${R(8,i=>`<rect x="${i*100}" y="210" width="50" height="290" fill="#63b045"/>`)}
+<g stroke="#fff" stroke-width="3" fill="none"><rect x="40" y="232" width="260" height="150"/><line x1="560" y1="210" x2="560" y2="500"/><circle cx="560" cy="380" r="60"/></g>
+<rect x="725" y="210" width="75" height="290" fill="#7f8c8d"/>${R(4,i=>`<line x1="725" y1="${250+i*70}" x2="800" y2="${250+i*70}" stroke="#ecf0f1" stroke-width="2"/>`)}
+<g><rect x="735" y="300" width="58" height="100" rx="12" fill="#c0392b"/><rect x="742" y="315" width="44" height="22" rx="4" fill="#d6eaf8"/><rect x="742" y="365" width="44" height="18" rx="4" fill="#d6eaf8"/></g>
+<g transform="rotate(-9 90 300)">
+${R(8,i=>`<line x1="${100+i*20}" y1="205" x2="${100+i*20}" y2="300" stroke="#fff" stroke-width="1" opacity=".6"/>`)}${R(5,i=>`<line x1="90" y1="${215+i*18}" x2="250" y2="${215+i*18}" stroke="#fff" stroke-width="1" opacity=".6"/>`)}
+<path d="M90 300 V205 H250 V300" fill="none" stroke="#fff" stroke-width="8"/></g>
+<g><polygon points="430,432 446,420 452,436" fill="#2ecc71" opacity=".9"/><polygon points="455,438 470,428 468,444" fill="#27ae60"/><polygon points="440,446 452,442 447,453" fill="#58d68d"/><rect x="462" y="410" width="10" height="22" rx="3" fill="#1e8449" transform="rotate(40 467 421)"/></g>
+<path d="M596 352 q34 -18 68 0" fill="#8b6a3e"/><ellipse cx="630" cy="352" rx="30" ry="10" fill="#3e2a14"/>
+<g class="sway">${P(330,240,'#2980b9',{run:1,hair:'#3b2412'})}</g>
+${P(470,262,'#2980b9',{skin:'#8d5524',hair:'#111'})}
+<g class="sway2">${P(560,236,'#e67e22',{run:1,s:.9})}</g>
+${P(280,330,'#e67e22',{s:1.05,hair:'#c98b2b'})}
+${ball(400,400,10,'#fff','bob')}`}
+
+function s3(){return `
+<rect width="800" height="150" fill="#e3f4f8"/>
+${R(17,i=>`<line x1="${i*50}" y1="0" x2="${i*50}" y2="150" stroke="#cbe5ec"/>`)}${R(3,i=>`<line x1="0" y1="${i*50}" x2="800" y2="${i*50}" stroke="#cbe5ec"/>`)}
+<rect x="40" y="55" width="150" height="60" rx="6" fill="#fff" stroke="#c0392b" stroke-width="4"/>
+<text x="115" y="81" text-anchor="middle" font-size="15" font-weight="800" fill="#c0392b" font-family="Lexend,sans-serif">0.9m SHALLOW</text>
+<text x="115" y="103" text-anchor="middle" font-size="13" font-weight="600" fill="#c0392b" font-family="Lexend,sans-serif">NO DIVING</text>
+<rect x="560" y="48" width="70" height="72" rx="6" fill="none" stroke="#e74c3c" stroke-width="2" stroke-dasharray="6 5"/><path d="M575 64 h40 M575 64 v10 M615 64 v10" stroke="#7f8c8d" stroke-width="5" fill="none"/>
+<text x="595" y="112" font-size="10" text-anchor="middle" fill="#c0392b" font-weight="800" font-family="Lexend,sans-serif">RESCUE POLE</text>
+<rect y="150" width="800" height="110" fill="#cfd8dc"/>${R(17,i=>`<line x1="${i*50}" y1="150" x2="${i*50}" y2="260" stroke="#bfc9ce"/>`)}
+<rect y="260" width="800" height="240" fill="#2f9fd8"/><rect y="252" width="800" height="10" fill="#ecf0f1"/>
+${R(6,i=>`<path d="M${i*140} 300 q35 -10 70 0 t70 0" stroke="#7fd0f5" stroke-width="3" fill="none" opacity=".7"/>`)}
+${[330,400,460].map(y=>`<line x1="0" y1="${y}" x2="800" y2="${y}" stroke="#e74c3c" stroke-width="6" stroke-dasharray="10 10"/>`).join('')}
+<g class="bob2"><circle cx="300" cy="365" r="11" fill="#e74c3c"/><path d="M283 376 q17 8 34 0" stroke="#fff" stroke-width="3" fill="none"/></g>
+<g class="bob2" style="animation-delay:-1s"><circle cx="520" cy="430" r="11" fill="#f1c40f"/><path d="M503 441 q17 8 34 0" stroke="#fff" stroke-width="3" fill="none"/></g>
+<ellipse cx="335" cy="235" rx="42" ry="10" fill="#9fd8f5" opacity=".9"/>
+${P(330,160,'#9b59b6',{run:1,s:.9,hair:'#2b1b10'})}
+<g>${[['#e74c3c',-12],['#f1c40f',8],['#3498db',-4],['#2ecc71',14]].map(([c,r],i)=>`<rect x="${470+i*14}" y="${215+(i%2)*6}" width="36" height="22" rx="7" fill="${c}" transform="rotate(${r} ${488+i*14} ${226})"/>`).join('')}</g>
+<g stroke="#ecf0f1" stroke-width="6"><line x1="665" y1="255" x2="680" y2="120"/><line x1="725" y1="255" x2="710" y2="120"/><line x1="670" y1="212" x2="720" y2="212"/><line x1="674" y1="170" x2="716" y2="170"/></g>
+<rect x="670" y="104" width="50" height="17" rx="4" fill="#e74c3c"/><text x="695" y="117" font-size="9" text-anchor="middle" fill="#fff" font-weight="800" font-family="Lexend,sans-serif">LIFEGUARD</text>
+${P(178,244,'#e67e22',{dive:1,rot:135,hair:'#4a3020'})}
+${P(430,170,'#16a085',{s:.9,skin:'#8d5524',hair:'#111'})}`}
+
+function s4(){return `
+<rect width="800" height="175" fill="#cde9ff"/>
+<circle cx="80" cy="60" r="34" fill="#ffd54f"/>${R(8,i=>{const a=i*Math.PI/4;return `<line x1="${80+Math.cos(a)*42}" y1="${60+Math.sin(a)*42}" x2="${80+Math.cos(a)*56}" y2="${60+Math.sin(a)*56}" stroke="#f9a825" stroke-width="4" stroke-linecap="round"/>`})}
+<rect x="128" y="92" width="62" height="26" rx="13" fill="#d63031"/><text x="159" y="110" text-anchor="middle" font-size="15" font-weight="800" fill="#fff" font-family="Lexend,sans-serif">28°C</text>
+${R(10,i=>`<ellipse cx="${260+i*60}" cy="172" rx="40" ry="18" fill="${i%2?'#4f9a43':'#458a3a'}"/>`)}
+<rect y="170" width="800" height="330" fill="#7cc45c"/>
+<g stroke="#fff" stroke-width="3"><line x1="180" y1="330" x2="790" y2="175"/><line x1="180" y1="330" x2="790" y2="365"/></g>
+<circle cx="180" cy="330" r="27" fill="#bdc3c7" stroke="#fff" stroke-width="4"/>
+${ball(590,322,7,'#555')}${ball(660,300,7,'#555')}
+${P(178,262,'#2c3e50',{throw:1,hair:'#111'})}
+${P(246,282,'#e74c3c',{s:.85,hair:'#d9a441'})}${P(276,290,'#16a085',{s:.85,skin:'#8d5524',hair:'#111'})}
+${P(520,250,'#f39c12',{s:.75,hair:'#2b1b10'})}<g class="sway">${P(552,256,'#8e44ad',{s:.75,run:1})}</g>
+<g stroke-width="4" stroke-linecap="round"><line x1="402" y1="232" x2="392" y2="148" stroke="#95a5a6"/><line x1="414" y1="232" x2="420" y2="150" stroke="#95a5a6"/><line x1="408" y1="232" x2="407" y2="146" stroke="#b2bec3"/></g>
+<g stroke="#2d3436" stroke-width="6"><line x1="396" y1="188" x2="397" y2="198"/><line x1="417" y1="188" x2="417" y2="198"/></g>
+<rect x="570" y="385" width="200" height="46" rx="6" fill="#f4d58d" stroke="#c9a85c" stroke-width="3"/>
+<rect x="300" y="398" width="270" height="22" fill="#e9967a" opacity=".6"/>
+<line x1="470" y1="428" x2="540" y2="404" stroke="#8b5a2b" stroke-width="5" stroke-linecap="round"/>
+<g stroke="#7f8c8d" stroke-width="3"><line x1="528" y1="394" x2="552" y2="410"/>${R(5,i=>`<line x1="${530+i*5}" y1="${396+i*3}" x2="${533+i*5}" y2="${384+i*3}"/>`)}</g>
+<rect y="445" width="800" height="55" fill="#c8553d"/>${R(3,i=>`<line x1="0" y1="${462+i*15}" x2="800" y2="${462+i*15}" stroke="#fff" stroke-width="2"/>`)}`}
+
+function s5(){return `
+<rect width="800" height="205" fill="#dfe4ea"/>
+<rect x="250" y="40" width="330" height="120" fill="#c9d6e3" stroke="#aab7c4" stroke-width="4"/><line x1="300" y1="150" x2="380" y2="50" stroke="#fff" stroke-width="8" opacity=".5"/>
+<rect y="205" width="800" height="295" fill="#46505f"/>${R(9,i=>`<line x1="${i*100}" y1="205" x2="${i*100}" y2="500" stroke="#3c4553"/>`)}${R(4,i=>`<line x1="0" y1="${260+i*65}" x2="800" y2="${260+i*65}" stroke="#3c4553"/>`)}
+<rect x="20" y="118" width="72" height="205" fill="#2c3e50"/>${R(4,i=>`<circle cx="56" cy="${150+i*44}" r="17" fill="#111" stroke="#666" stroke-width="3"/>`)}
+<polygon points="95,332 250,332 250,312 95,318" fill="#34495e"/><rect x="95" y="310" width="150" height="6" fill="#222"/>
+<line x1="242" y1="312" x2="258" y2="228" stroke="#7f8c8d" stroke-width="6"/><rect x="236" y="214" width="44" height="18" rx="4" fill="#2c3e50"/>
+<g class="sway2">${P(170,238,'#e67e22',{run:1,s:.95,hair:'#2b1b10'})}</g>
+<g stroke="#bdc3c7" stroke-width="5"><line x1="398" y1="346" x2="398" y2="272"/><line x1="512" y1="346" x2="512" y2="272"/></g>
+<rect x="380" y="332" width="150" height="16" rx="5" fill="#c0392b"/><rect x="395" y="348" width="10" height="30" fill="#7f8c8d"/><rect x="505" y="348" width="10" height="30" fill="#7f8c8d"/>
+<g stroke-linecap="round" stroke-width="8"><line x1="425" y1="326" x2="398" y2="372" stroke="#2d3a4f"/><line x1="435" y1="326" x2="415" y2="374" stroke="#2d3a4f"/></g>
+<rect x="420" y="314" width="92" height="20" rx="9" fill="#2980b9"/>
+<g stroke="#2980b9" stroke-width="7" stroke-linecap="round"><line x1="470" y1="316" x2="465" y2="288"/><line x1="495" y1="316" x2="492" y2="288"/></g>
+<circle cx="524" cy="320" r="11" fill="#f1c27d"/>
+<line x1="355" y1="284" x2="555" y2="284" stroke="#dfe6e9" stroke-width="6"/>
+<rect x="360" y="256" width="14" height="56" rx="3" fill="#111"/><rect x="374" y="262" width="10" height="44" rx="3" fill="#222"/><rect x="536" y="256" width="14" height="56" rx="3" fill="#111"/><rect x="526" y="262" width="10" height="44" rx="3" fill="#222"/>
+<g><rect x="262" y="441" width="36" height="6" fill="#95a5a6"/><rect x="255" y="434" width="11" height="20" rx="3" fill="#2c3e50"/><rect x="294" y="434" width="11" height="20" rx="3" fill="#2c3e50"/>
+<rect x="318" y="456" width="36" height="6" fill="#95a5a6" transform="rotate(20 336 459)"/><circle cx="318" cy="452" r="10" fill="#2c3e50"/><circle cx="352" cy="465" r="10" fill="#2c3e50"/></g>
+<rect x="762" y="178" width="20" height="16" rx="3" fill="#fff" stroke="#999"/>
+<path d="M772 192 C 760 260, 700 300, 645 420 S 420 480, 252 334" stroke="#111" stroke-width="4" fill="none"/>
+<rect x="622" y="414" width="40" height="16" rx="4" fill="#ecf0f1" stroke="#999"/>
+<rect x="640" y="40" width="10" height="265" fill="#7f8c8d"/><rect x="750" y="40" width="10" height="265" fill="#7f8c8d"/><rect x="640" y="36" width="120" height="12" fill="#95a5a6"/>
+<circle cx="700" cy="60" r="10" fill="#555"/><rect x="676" y="230" width="48" height="70" fill="#2c3e50"/>${R(6,i=>`<line x1="676" y1="${236+i*11}" x2="724" y2="${236+i*11}" stroke="#555"/>`)}
+<path d="M700 70 V135 l-6 6 l10 4 l-8 6 l6 6 V230" stroke="#bdc3c7" stroke-width="3" fill="none"/>
+<g stroke="#ffd400" stroke-width="2"><line x1="690" y1="142" x2="680" y2="136"/><line x1="710" y1="148" x2="720" y2="142"/><line x1="708" y1="156" x2="718" y2="160"/></g>`}
+
+function s6(){return `
+<defs><linearGradient id="sky6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b267"/><stop offset="1" stop-color="#fde2c0"/></linearGradient>
+<radialGradient id="glare6"><stop offset="0" stop-color="#fff7c2" stop-opacity=".9"/><stop offset="1" stop-color="#fff7c2" stop-opacity="0"/></radialGradient>
+<pattern id="mesh6" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M0 0L14 14M14 0L0 14" stroke="#7f8c8d" stroke-width="1.5"/></pattern></defs>
+<rect width="800" height="190" fill="url(#sky6)"/>
+<circle cx="95" cy="178" r="120" fill="url(#glare6)"/><circle cx="95" cy="178" r="38" fill="#fff3a8"/>
+${R(5,i=>`<g stroke="#5d4037" stroke-width="4" fill="none"><line x1="${210+i*100}" y1="186" x2="${210+i*100}" y2="118"/><line x1="${210+i*100}" y1="142" x2="${194+i*100}" y2="116"/><line x1="${210+i*100}" y1="134" x2="${228+i*100}" y2="110"/></g>`)}
+<rect y="185" width="800" height="315" fill="#3c7fa8"/>
+<g stroke="#fff" stroke-width="3" fill="none"><rect x="30" y="205" width="640" height="282"/><line x1="243" y1="205" x2="243" y2="487"/><line x1="457" y1="205" x2="457" y2="487"/></g>
+<rect x="685" y="110" width="115" height="232" fill="url(#mesh6)"/><g stroke="#636e72" stroke-width="5"><line x1="688" y1="108" x2="688" y2="342"/><line x1="798" y1="108" x2="798" y2="342"/></g>
+<polygon points="715,200 760,190 772,250 726,266" fill="#3c7fa8"/><path d="M715 200 l-12 -9 M760 190 l12 -11 M772 250 l15 5 M726 266 l-12 11 M738 196 l2 -12" stroke="#636e72" stroke-width="2.5"/>
+${R(14,i=>{const x=192+((i*37)%90),y=420+((i*23)%40);return `<ellipse cx="${x}" cy="${y}" rx="9" ry="5" fill="${['#d35400','#e67e22','#a04000','#f39c12'][i%4]}" transform="rotate(${i*40} ${x} ${y})"/>`})}
+<ellipse cx="610" cy="432" rx="56" ry="16" fill="#eaf8ff" opacity=".9"/><path d="M580 430 l20 -4 M615 436 l22 -5" stroke="#fff" stroke-width="3"/>
+<line x1="520" y1="332" x2="520" y2="120" stroke="#95a5a6" stroke-width="8"/><ellipse cx="545" cy="122" rx="24" ry="7" fill="none" stroke="#e74c3c" stroke-width="4"/><rect x="498" y="328" width="44" height="8" fill="#7f8c8d"/>
+<g class="sway">${P(300,282,'#e74c3c',{run:1,hair:'#2b1b10'})}</g>
+${P(420,320,'#f1c40f',{skin:'#8d5524',hair:'#111'})}
+<g class="sway2">${P(590,290,'#e74c3c',{run:1,s:.9,hair:'#d9a441'})}</g>
+${ball(370,300,10,'#fff','bob')}`}
+
+const S0=[
+{title:'Sports Hall: Dodgeball',icon:'🏐',brief:'Year 8 dodgeball club is about to start. Before you blow the whistle, scan the hall.',draw:s1,hz:[
+{x:325,y:388,r:62,cat:'Equipment',t:'Benches left in the playing area',who:'Players running and dodging',harm:'Tripping over or colliding with the bench: bruises, sprains, fractures',L:3,S:2,ok:'Move the benches out of the playing area to the side walls before the session',bad:['Remind players to look where they are running','Put cones on the benches so they are easier to see'],why:'Removing the hazard (elimination) beats warning people about it. A warning relies on players remembering in the middle of a fast game.'},
+{x:552,y:438,r:54,cat:'Environment',t:'Water spilled on the floor',who:'Anyone moving across that area',harm:'Slipping: head injuries, sprains, fractures',L:3,S:2,ok:'Stop the activity, dry the floor fully and set up a water-bottle zone off court',bad:['Tell players to avoid that part of the court','Put a cone on the puddle and carry on'],why:'A wet sports-hall floor is a classic cause of slips. Dry it, then stop it happening again with a set place for bottles.'},
+{x:158,y:222,r:60,cat:'Environment',t:'Bags and coats dumped at the court edge',who:'Players chasing balls near the wall',harm:'Tripping into the wall: sprains, head injuries',L:2,S:2,ok:'Store bags in the changing room or a set area well away from the playing space',bad:['Ask pupils to push their bags tight against the wall','Make the court smaller but leave the bags where they are'],why:'A court needs clear run-off space around it. Bags anywhere near the playing edge are a trip hazard.'},
+{x:702,y:160,r:60,cat:'Procedures',t:'Fire exit blocked by stacked mats',who:'Everyone in the hall in an emergency',harm:'Not being able to get out quickly in a fire: serious injury',L:1,S:3,ok:'Clear the fire exit, and check every exit is clear as part of your pre-session checks',bad:['It is fine because the main door is still open','Tell pupils which other exit to use if there is a fire'],why:'Fire exits must never be blocked. Checking exits belongs in your pre-session facility check and your emergency action plan.'},
+{x:430,y:290,r:44,cat:'People',t:'Pupil wearing a necklace and earrings',who:'The pupil and anyone they collide with',harm:'Earrings torn out, necklace catching: cuts, choking risk',L:2,S:2,ok:'Remove all jewellery before the activity (tape studs only if school policy allows it)',bad:['Ask them to tuck the necklace inside their top','Let them play but keep them at the back'],why:'Removing jewellery is standard practice. Tucking it in does not stop it catching or tearing skin.'}]},
+{title:'Field: After-School Football',icon:'⚽',brief:'Year 9 football practice on the school field, and the sky is turning.',draw:s2,hz:[
+{x:170,y:255,r:68,cat:'Equipment',t:'Portable goal not anchored or weighted',who:'Goalkeepers, players, anyone hanging on the crossbar',harm:'Goal tipping over: crush injuries, which can be fatal',L:2,S:3,ok:'Anchor or weight the goal (pegs or sandbags), check it is stable, and ban swinging on it',bad:['Tell the goalkeeper not to lean on the post','Only use the goal for shooting drills'],why:'Unsecured goals falling on players have caused deaths. Always check goals are anchored before use.'},
+{x:450,y:436,r:46,cat:'Environment',t:'Broken glass on the pitch',who:'Players, especially when falling or sliding',harm:'Deep cuts and infections',L:2,S:2,ok:'Walk the pitch before the session and safely remove debris (gloves or a litter picker)',bad:['Put a cone over the glass','Make sure everyone wears football boots'],why:'A pre-session pitch walk finds glass, litter and dog mess. Remove it rather than mark it.'},
+{x:630,y:350,r:46,cat:'Environment',t:'Hole and uneven ground',who:'Players running at speed',harm:'Twisted or broken ankles, knee injuries',L:2,S:2,ok:'Cone off the area, move the playing space away from it and report it to the site team',bad:['Tell players to jump over it','Carry on, it is only a small hole'],why:'You cannot fix the hole during the session, so isolate it, move the activity, then report it.'},
+{x:635,y:100,r:68,cat:'Environment',t:'Thunderstorm approaching',who:'Everyone on the open field',harm:'Lightning strike: serious injury or death',L:2,S:3,ok:'Check the forecast beforehand, and stop and move indoors at the first sign of thunder or lightning',bad:['Keep playing but stay away from the goalposts','Shelter under the nearest tree until it passes'],why:'Open fields and tall objects such as trees are dangerous in lightning. Always have an indoor backup plan.'},
+{x:763,y:350,r:50,cat:'Environment',t:'Pitch right next to a car park with no fence',who:'Players chasing stray balls',harm:'Being hit by a vehicle: serious injury',L:2,S:3,ok:'Move the pitch away from the car park, and set a rule that nobody fetches balls from it without an adult',bad:['Ask drivers to slow down','Tell players to look both ways'],why:'Put distance between people and the danger, then add a clear rule. Relying on drivers or players being careful is weak.'}]},
+{title:'Swimming Pool: Lesson Start',icon:'🏊',brief:'Year 7 swimming lesson. Pupils are coming out of the changing rooms.',draw:s3,hz:[
+{x:695,y:175,r:60,cat:'People',t:'No lifeguard on duty',who:'All swimmers',harm:'Drowning',L:2,S:3,ok:'Nobody enters the water until a qualified lifeguard is in position',bad:['Let the strong swimmers go in first','Supervise from the changing-room door'],why:'Correct supervision (a qualified lifeguard and the right ratios) is non-negotiable in swimming.'},
+{x:332,y:200,r:48,cat:'People',t:'Pupil running on a wet poolside',who:'The runner and others nearby',harm:'Slipping: head injuries, falling into the pool',L:3,S:2,ok:'Brief and enforce a “walk on the poolside” rule, and supervise the poolside',bad:['Tell them to run carefully','Put towels down on the wet floor'],why:'Behaviour hazards are controlled by clear rules that are briefed at the start and enforced.'},
+{x:150,y:212,r:52,alt:[[115,85,58]],cat:'Procedures',t:'Diving into the shallow end',who:'The diver',harm:'Head and spinal injuries, which can be life-changing',L:2,S:3,ok:'No diving in shallow water: pupils enter by sitting entry or the steps, and depth signs are briefed',bad:['Only let confident swimmers dive','Tell them to make it a shallow dive'],why:'Diving into shallow water is a major cause of spinal injuries. Remove the activity completely.'},
+{x:500,y:228,r:48,cat:'Equipment',t:'Floats and kickboards left on the walkway',who:'People walking on the poolside',harm:'Tripping onto hard tiles or into the pool',L:2,S:2,ok:'Store equipment in a set box or rack after use',bad:['Ask pupils to step over them','Push them against the pool edge'],why:'Every piece of equipment needs a set storage place. Tidying as you go keeps walkways clear.'},
+{x:595,y:85,r:48,cat:'Equipment',t:'Rescue pole missing from its hook',who:'Any swimmer in difficulty',harm:'Delayed rescue: drowning',L:1,S:3,ok:'Check rescue equipment is in place during pre-session checks, and do not start until it is',bad:['The lifeguard can swim out instead','Use a float as a rescue aid if needed'],why:'Emergency equipment is part of your emergency action plan. Check it before the session, not during an emergency.'}]},
+{title:'Athletics: Throws & Jumps',icon:'🏃',brief:'Year 10 athletics carousel with shot put and long jump on a hot afternoon.',draw:s4,hz:[
+{x:538,y:285,r:60,cat:'Procedures',t:'Pupils walking through the throwing area',who:'Pupils collecting or crossing',harm:'Being hit by a shot: head injury, fractures',L:2,S:3,ok:'Mark off the landing area; nobody goes in until every throw is done and the teacher calls “collect”',bad:['Shout “watch out” before each throw','Tell them to walk through quickly'],why:'Throwing events need a strict throw-then-collect procedure. Nobody is in the sector while anyone is throwing.'},
+{x:262,y:312,r:50,cat:'People',t:'Waiting throwers standing too close to the circle',who:'Pupils waiting for their turn',harm:'Being hit by a mis-thrown shot: serious injury',L:2,S:3,ok:'Waiting pupils stand behind a marked safety line, well behind the thrower',bad:['Ask them to stay alert','Let them stand close so they can watch the technique'],why:'A mis-throw can go sideways or backwards. Use a marked waiting area behind the circle.'},
+{x:406,y:195,r:48,cat:'Equipment',t:'Javelins stuck upright in the ground',who:'Anyone walking or falling nearby',harm:'Puncture wounds, eye injuries',L:2,S:3,ok:'Collect javelins straight away and store them in a rack; carry them upright, point down',bad:['Leave them in the ground so nobody treads on them','Put a cone next to them'],why:'Javelins should always be carried and stored safely, never left standing where people walk.'},
+{x:528,y:410,r:46,cat:'Equipment',t:'Rake left prongs-up beside the pit',who:'Jumpers landing or people walking past',harm:'Puncture wounds and cuts',L:2,S:2,ok:'Lay rakes prongs-down, away from the runway and landing area',bad:['Tell jumpers to land in the middle of the pit','Leave it there so it is handy for raking'],why:'Equipment in use still needs a safe place: prongs down and away from the landing area.'},
+{x:85,y:65,r:58,alt:[[159,105,36]],cat:'Environment',t:'Very hot day with no shade or water',who:'Everyone, especially those working hard',harm:'Dehydration, heat exhaustion, sunburn',L:2,S:2,ok:'Plan water breaks, shade, sun cream and hats, and shorten or reschedule in extreme heat',bad:['Tell pupils to bring water next time','Work harder so the session finishes sooner'],why:'Weather is part of your environment check. Plan for heat as well as cold and rain.'}]},
+{title:'Fitness Suite: Circuit',icon:'🏋️',brief:'Year 11 fitness suite session with lots going on. Look at the equipment carefully.',draw:s5,hz:[
+{x:105,y:300,r:52,cat:'Environment',t:'Treadmill with no clear space behind it',who:'The person running',harm:'Being thrown off the back into the weight rack: head and back injuries',L:2,S:3,ok:'Position treadmills with a clear safety space behind them (about 2 m)',bad:['Run at a slower speed','Put a mat over the weight rack'],why:'Anyone who falls on a moving treadmill is thrown backwards. A clear space behind it is the control.'},
+{x:460,y:300,r:62,cat:'People',t:'Heavy bench press with no spotter',who:'The lifter',harm:'Bar dropping onto the chest or neck: serious injury',L:2,S:3,ok:'Always use a trained spotter (or safety bars) and a weight the lifter can control',bad:['Lift quickly to get it over with','Keep a phone nearby just in case'],why:'Spotting is a key safety procedure for free weights, and the weight must suit the lifter’s ability.'},
+{x:305,y:450,r:52,cat:'Equipment',t:'Dumbbells left on the floor',who:'People moving between stations',harm:'Tripping, weights dropped on feet',L:3,S:2,ok:'Return weights to the rack after every use, and brief the “re-rack” rule',bad:['Step carefully round them','Push them under the bench'],why:'A tidy gym is a safe gym. Re-racking is a rule to brief at the start of the session.'},
+{x:642,y:422,r:48,cat:'Equipment',t:'Extension lead trailing across the walkway',who:'Anyone walking through',harm:'Tripping; electrical faults',L:2,S:2,ok:'Remove the trailing lead: use a wall socket, or a cable cover if it cannot be avoided',bad:['Tape a sign to the lead','Tell people to step over it'],why:'Trailing cables are a trip hazard and an electrical risk. Remove or cover them.'},
+{x:700,y:150,r:50,cat:'Equipment',t:'Frayed cable on the cable machine',who:'The user and people nearby',harm:'Cable snapping: whiplash, cuts, injuries from the weight stack',L:2,S:3,ok:'Take the machine out of use, label it “Out of order” and report it for repair',bad:['Only use light weights on it','Wrap tape round the frayed part'],why:'Damaged equipment is never used. Isolate it, label it and report it.'}]},
+{title:'Netball Court: Winter',icon:'🥅',brief:'Year 8 netball on the outdoor courts on a cold, sunny November afternoon.',draw:s6,hz:[
+{x:232,y:440,r:58,cat:'Environment',t:'Wet leaves on the court',who:'Players changing direction quickly',harm:'Slipping: sprains, knee and wrist injuries',L:3,S:2,ok:'Sweep the court before the session; if it cannot be cleared, use another court or go indoors',bad:['Tell players to avoid that corner','Play anyway, leaves are soft'],why:'Checking and clearing the surface is part of every outdoor pre-session check.'},
+{x:520,y:300,r:48,cat:'Equipment',t:'Netball post with no padding',who:'Players in the shooting circle',harm:'Colliding with the post: head injuries, bruising',L:2,S:2,ok:'Fit post padding before play starts',bad:['Tell shooters to be careful','Move the post during play'],why:'Collisions will happen in a busy circle. Padding reduces how severe they are.'},
+{x:740,y:230,r:56,cat:'Environment',t:'Broken fence with sharp wire',who:'Players chasing the ball off court',harm:'Cuts and puncture wounds',L:2,S:2,ok:'Cone off that side, keep play away from it and report it for repair',bad:['Tell players not to touch it','Hang a bag over the hole'],why:'You cannot fix it during the lesson, so isolate it, keep people away and report it.'},
+{x:610,y:432,r:54,cat:'Environment',t:'Patch of ice on the court',who:'All players',harm:'Slipping: head injuries, fractures',L:3,S:2,ok:'Check the surface before play; if it is icy, do not use it (move indoors or postpone)',bad:['Warm up on it to melt the ice','Tell everyone to walk on that part'],why:'Weather and surface checks are essential in winter. Ice cannot be made safe with rules.'},
+{x:95,y:165,r:58,cat:'Environment',t:'Low winter sun shining into players’ eyes',who:'Players facing the sun',harm:'Being hit by the ball, colliding with others',L:2,S:1,ok:'Set up drills so players are not facing straight into the sun',bad:['Tell players to squint','Make the drills faster'],why:'How you lay out the session is part of planning. Small changes reduce the risk.'}]}
+];
+
+/* ---------- clip scenes (animated) ---------- */
+const kf=(K,t)=>{if(t<=K[0][0])return K[0].slice(1);for(let i=1;i<K.length;i++)if(t<=K[i][0]){const[a,...p]=K[i-1],[b,...q]=K[i];let u=(t-a)/(b-a);u=u*u*(3-2*u);return p.map((v,j)=>v+(q[j]-v)*u)}return K[K.length-1].slice(1)};
+const vel=(fn,t)=>{const a=fn(t),b=fn(Math.max(0,t-.12));return[Math.hypot(a[0]-b[0],a[1]-b[1])/.12,a[0]-b[0]]};
+const racket=()=>'';
+const shuttle=(x,y,gy)=>`${gy?`<ellipse cx="${x+4}" cy="${gy}" rx="7" ry="2.2" fill="#000" opacity=".18"/>`:''}<g><polygon points="${x},${y-3} ${x+10},${y-8} ${x+10},${y+4} ${x},${y+3}" fill="#fff"/><circle cx="${x}" cy="${y}" r="4" fill="#f5f5f5" stroke="#999"/></g>`;
+const vig=id=>`<radialGradient id="${id}" cx=".5" cy=".55" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></radialGradient>`;
+const bB=t=>kf([[0,330,286],[6,335,286],[8.5,402,296],[11.5,404,296],[13.5,335,286],[40,335,286]],t);
+const bA1=t=>kf([[0,88,246],[18,88,246],[20.5,118,300],[24,118,300],[26,88,246],[40,88,246]],t);
+const bA2=t=>kf([[0,160,372],[18,160,372],[20.5,140,326],[24,140,326],[26,160,372],[40,160,372]],t);
+const bBot=t=>kf([[0,782,446],[29,782,446],[32.5,660,446],[35,622,446],[40,622,446]],t);
+const bD=t=>[690+22*Math.sin(t*1.3),296+10*Math.sin(t*.9)];
+function c1(t=0){
+ const net=x=>`<rect x="${x-5}" y="200" width="10" height="270" fill="url(#net1)"/><line x1="${x}" y1="200" x2="${x}" y2="470" stroke="#fff" stroke-width="2.5"/><line x1="${x+3}" y1="203" x2="${x+3}" y2="473" stroke="#000" stroke-opacity=".15" stroke-width="3"/><rect x="${x-3}" y="186" width="6" height="18" fill="#555"/><rect x="${x-3}" y="456" width="6" height="18" fill="#555"/>`;
+ const p2=(t%2.2)/2.2,d2=Math.floor(t/2.2)%2,sx2=d2?690-175*p2:515+175*p2,sy2=270-110*Math.sin(Math.PI*p2);
+ const p1=((t+1)%2.6)/2.6,d1=Math.floor((t+1)/2.6)%2;let sx1=d1?320-190*p1:130+190*p1,sy1=262-100*Math.sin(Math.PI*p1),g1=330;
+ if(t>=18.5&&t<=24.5){sx1=128;sy1=230+Math.min(1,(t-18.5)/2)*70}
+ const B=bB(t),A1=bA1(t),A2=bA2(t),bt=bBot(t),D=bD(t);
+ const [vB]=vel(bB,t),[vA1]=vel(bA1,t),[vA2]=vel(bA2,t);
+ const sw=k=>2.35+0.85*Math.sin(t*4.2+k);
+ return `<defs><pattern id="net1" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 0L6 6M6 0L0 6" stroke="#eee" stroke-width=".8"/></pattern>
+ <linearGradient id="wall1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fa"/><stop offset="1" stop-color="#d9e1e8"/></linearGradient>
+ <linearGradient id="floor1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a7052"/><stop offset="1" stop-color="#358a64"/></linearGradient>
+ <radialGradient id="glow1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>${vig('vig1')}</defs>
+ <rect width="800" height="175" fill="url(#wall1)"/>${R(5,i=>`<rect x="${60+i*150}" y="20" width="90" height="36" rx="3" fill="#d6ecf8" stroke="#b9c7d3" stroke-width="3"/>`)}<rect y="160" width="800" height="15" fill="#c7d0d8"/>
+ <rect y="175" width="800" height="325" fill="url(#floor1)"/>${R(4,i=>`<ellipse cx="${110+i*195}" cy="300" rx="120" ry="45" fill="url(#glow1)"/>`)}
+ <g stroke="#fff" stroke-width="3" fill="none" opacity=".92"><rect x="30" y="200" width="360" height="270"/><rect x="410" y="200" width="360" height="270"/><line x1="30" y1="225" x2="390" y2="225"/><line x1="410" y1="225" x2="770" y2="225"/><line x1="30" y1="445" x2="390" y2="445"/><line x1="410" y1="445" x2="770" y2="445"/><line x1="140" y1="200" x2="140" y2="470"/><line x1="280" y1="200" x2="280" y2="470"/><line x1="520" y1="200" x2="520" y2="470"/><line x1="660" y1="200" x2="660" y2="470"/></g>
+ ${bench(250,150,300)}${P(300,96,'#8e44ad',{s:.62,ph:t*3,noshadow:1})}${P(350,96,'#16a085',{s:.62,skin:'#8d5524',hair:'#111',ph:t*3+1,face:-1,noshadow:1})}${P(500,96,'#f39c12',{s:.62,hair:'#d9a441',ph:t*3+2,noshadow:1})}
+ ${net(210)}${net(590)}<rect x="566" y="466" width="48" height="16" rx="4" fill="#34495e"/><rect x="560" y="478" width="60" height="8" rx="3" fill="#2c3e50"/>
+ ${R(5,i=>shuttle(728+(i%3)*14,440+(i*7)%18))}
+ <ellipse cx="${bt[0]}" cy="${bt[1]+8}" rx="16" ry="3" fill="#000" opacity=".2"/><rect x="${bt[0]-14}" y="${bt[1]-7}" width="30" height="14" rx="6" fill="#2e86de" transform="rotate(${(t*120)%360} ${bt[0]} ${bt[1]})"/>
+ ${P(A1[0],A1[1],'#e74c3c',{hair:'#2b1b10',run:vA1>8,ph:t*11,rk:sw(0)})}
+ ${P(A2[0],A2[1],'#c0392b',{skin:'#c68642',hair:'#111',run:vA2>8,ph:t*11+1,rk:sw(1)})}
+ ${P(B[0],B[1],'#2980b9',{hair:'#d9a441',face:-1,run:vB>8,ph:t*11,rk:sw(2)})}
+ ${P(492,288,'#f1c40f',{skin:'#8d5524',hair:'#111',ph:t*3,rk:sw(3)})}
+ ${P(D[0],D[1],'#9b59b6',{hair:'#4a3020',face:-1,ph:t*3,rk:sw(4)})}
+ ${shuttle(sx1,sy1,g1+(sx1<210?0:-10))}${shuttle(sx2,sy2,310)}
+ <rect width="800" height="500" fill="url(#vig1)"/>`}
+
+const fAT=t=>kf([[0,170,322],[24,170,322],[27,255,322],[30,320,322],[40,320,322]],t);
+const fDF=t=>kf([[0,100,322],[24,100,322],[26.5,200,322],[28.5,262,350],[30,262,350],[31,230,322],[40,230,322]],t);
+const fSB=t=>kf([[0,600,430],[31,600,430],[33,470,420],[36,265,412],[40,250,412]],t);
+const fRun=t=>kf([[0,70,392],[34,70,392],[38,320,392],[40,320,392]],t);
+const fH1=t=>kf([[0,465,300],[15,465,300],[17.5,508,250],[21,508,250],[23,465,300],[40,465,300]],t);
+const fH2=t=>kf([[0,600,300],[15,600,300],[17.5,534,250],[21,534,250],[23,600,300],[40,600,300]],t);
+const fG1=t=>[450+34*Math.sin(t*.8),400+8*Math.sin(t*1.1)],fG2=t=>[640+30*Math.cos(t),390+10*Math.sin(t*.7)];
+function c2(t=0){const AT=fAT(t),DF=fDF(t),SB=fSB(t),RN=fRun(t),H1=fH1(t),H2=fH2(t),G1=fG1(t),G2=fG2(t);
+ const pp=(t%1.6)/1.6,pd=Math.floor(t/1.6)%2,px=pd?290-210*pp:80+210*pp;
+ const hb=t<15?[650,380]:t<17.5?kf([[15,650,380],[17.5,521,232]],t):t<21?[521,232]:kf([[21,521,232],[23,560,330]],t);
+ const hbG=t<15?380:t<17.5?380-(t-15)/2.5*90:t<21?290:290+(t-21)/2*40;
+ const sliding=t>=27&&t<30.5,hang=t>=6&&t<=12.5,jumping=t>=17&&t<20;
+ const [vAT]=vel(fAT,t),[vDF]=vel(fDF,t),[vRN]=vel(fRun,t),[vH1]=vel(fH1,t),[vH2]=vel(fH2,t),[vG1,dG1]=vel(fG1,t),[vG2,dG2]=vel(fG2,t);
+ const lift=jumping?-14*Math.sin((t-17)/3*Math.PI):0;
+ return `<defs><linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd2f7"/><stop offset="1" stop-color="#e3f3ff"/></linearGradient>
+ <linearGradient id="grass2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5aa843"/><stop offset="1" stop-color="#78c75a"/></linearGradient>${vig('vig2')}</defs>
+ <rect width="800" height="150" fill="url(#sky2)"/><g fill="#fff" opacity=".85"><ellipse cx="160" cy="50" rx="55" ry="16"/><ellipse cx="200" cy="40" rx="35" ry="16"/><ellipse cx="560" cy="70" rx="45" ry="12"/></g>
+ ${R(11,i=>`<ellipse cx="${i*80}" cy="148" rx="52" ry="22" fill="${i%2?'#3f8f3a':'#357d31'}"/>`)}
+ <rect y="145" width="800" height="355" fill="url(#grass2)"/>${R(8,i=>`<rect x="${i*100}" y="145" width="50" height="355" fill="#000" opacity=".045"/>`)}
+ <g stroke="#fff" stroke-width="2.5" fill="none" opacity=".9"><rect x="385" y="165" width="405" height="320"/><circle cx="560" cy="325" r="50"/></g>
+ ${[[40,190],[330,190],[40,480],[330,480],[185,190],[185,480]].map(([x,y])=>`<ellipse cx="${x+3}" cy="${y+3}" rx="13" ry="3" fill="#000" opacity=".18"/>`+cone(x,y)).join('')}
+ <g>${R(4,i=>`<rect x="${342+i*8}" y="${440+(i%2)*8}" width="30" height="20" rx="5" fill="${['#f39c12','#f1c40f','#e67e22','#d35400'][i]}" transform="rotate(${i*25-30} ${357+i*8} ${450})"/>`)}${ball(372,470,9,'#fff')}${ball(350,478,9,'#fff')}<path d="M330 470 q15 -20 40 -6 l-6 22 z" fill="#2c3e50"/></g>
+ <ellipse cx="738" cy="302" rx="52" ry="5" fill="#000" opacity=".15"/>${R(9,i=>`<line x1="${700+i*10}" y1="215" x2="${700+i*10}" y2="300" stroke="#fff" stroke-width="1" opacity=".6"/>`)}${R(5,i=>`<line x1="690" y1="${225+i*16}" x2="785" y2="${225+i*16}" stroke="#fff" stroke-width="1" opacity=".6"/>`)}
+ <path d="M690 300 V215 H785 V300" fill="none" stroke="#fff" stroke-width="7"/>
+ ${hang?P(738,223+3*Math.sin(t*3),'#2980b9',{dive:1,hair:'#2b1b10',noshadow:1}):P(738+20*Math.sin(t),222,'#2980b9',{hair:'#2b1b10',face:-1,ph:t*3})}
+ ${P(80,232,'#f1c40f',{s:.9,ph:t*3})}${P(300,232,'#f1c40f',{s:.9,skin:'#8d5524',hair:'#111',face:-1,ph:t*3})}<ellipse cx="${px}" cy="309" rx="8" ry="2.5" fill="#000" opacity=".2"/>${ball(px,302,8,'#fff')}
+ ${P(RN[0],RN[1]-82,'#f1c40f',{run:vRN>8,ph:t*11,s:.9,hair:'#c98b2b'})}
+ ${P(AT[0],AT[1]-82,'#e67e22',{run:vAT>8,ph:t*11,hair:'#2b1b10'})}
+ ${sliding?P(DF[0],DF[1]-30,'#16a085',{rot:-100,run:1,ph:1.2,skin:'#8d5524',hair:'#111'}):P(DF[0],DF[1]-82,'#16a085',{run:vDF>8,ph:t*11+.5,skin:'#8d5524',hair:'#111'})}
+ ${P(H1[0],H1[1]-82+lift,'#c0392b',{run:vH1>8&&!jumping,jump:jumping,ph:t*11,hair:'#4a3020'})}${P(H2[0],H2[1]-82+lift,'#2980b9',{run:vH2>8&&!jumping,jump:jumping,ph:t*11+1,face:-1})}
+ ${P(G1[0],G1[1]-8,'#c0392b',{s:.9,run:vG1>15,ph:t*9,face:dG1<0?-1:1})}${P(G2[0],G2[1]-8,'#2980b9',{s:.9,skin:'#c68642',run:vG2>15,ph:t*9,face:dG2<0?-1:1})}
+ <ellipse cx="${hb[0]}" cy="${hbG}" rx="9" ry="2.6" fill="#000" opacity=".2"/>${ball(hb[0],hb[1],9,'#fff')}<ellipse cx="${SB[0]}" cy="${SB[1]+9}" rx="9" ry="2.6" fill="#000" opacity=".2"/>${ball(SB[0],SB[1],9,'#fff')}
+ <rect width="800" height="500" fill="url(#vig2)"/>`}
+
+const CLIPS=[
+{title:'Badminton: Club Session',icon:'🏸',clip:true,dur:40,brief:'Year 9 badminton club with two courts in use. Watch the clip, and tap or pause when you see a hazard.',draw:c1,
+ hid:['A pupil with asthma whose inhaler is not courtside','No warm-up before lunging and jump smashes','Too many pupils on one court with rackets swinging','Trainers with poor grip on a dusty floor'],
+ tw:'A pupil is hit in the eye by a shuttle. What do you do, and could your plan have made it less likely?',ta:'Stop play and give first aid, with no pressure on the eye. Get medical help if their vision is affected, record it and inform parents. In the plan: beginners stay back from the net in early drills, use feeding drills before full rallies, and limit the number of players per court.',
+ hz:[
+ {x:402,y:330,r:55,win:[6.5,13],tm:10,at:t=>{const b=bB(t);return{x:b[0],y:b[1]+40}},cat:'Environment',t:'Player backing into the next court’s swing zone',who:'Players on both courts',harm:'Being hit by a racket: eye and face injuries, collisions',L:2,S:3,ok:'Leave a clear gap between courts (use every other court if needed) and set a rule: never chase a shuttle into another court, call “let” and stop',bad:['Tell players to swing more gently','Ask the players on the other court to keep watching'],why:'Space between courts keeps players away from other people’s rackets, and a “stop and call let” rule controls the moment it goes wrong.',lvl:3,l1:'Spaces the courts or players apart',k1:'space|gap|apart|alternat|separat|distance|spread|fewer|every other|further',l2:'Sets a clear rule for stray shuttles',k2:'rule|let|stop|don\'t chase|do not chase|never|stay in|own court|call'},
+ {x:745,y:448,r:42,cat:'Equipment',t:'Shuttles lying on the floor behind the baseline',who:'Players moving backwards for overhead shots',harm:'Stepping on a shuttle and rolling an ankle',L:3,S:2,ok:'Collect loose shuttles into a tube or box after every rally, and keep spares off court',bad:['Kick them to the side when you see them','Collect them all at the end of the session'],why:'Loose shuttles are a classic badminton trip hazard. Clearing them after every rally removes it.',lvl:1,l1:'Clears the shuttles away',k1:'collect|pick|tube|box|clear|remov|put away|tidy|take',l2:'Says how often (every rally or between drills)',k2:'every|after each|rally|between|regular|always|each time|spare'},
+ {x:590,y:476,r:40,cat:'Equipment',t:'Net post base sticking out beyond the court',who:'Players lunging or running near the net',harm:'Tripping over the base: sprains, falls onto the hard floor',L:2,S:2,ok:'Set the post up correctly at the court edge, check it before play and keep the area around it clear',bad:['Tell players to remember it is there','Put a bag on top of the base'],why:'Setting up equipment correctly and checking it is part of every pre-session check.',lvl:2,l1:'Sets the post up correctly or moves it',k1:'position|move|correct|line|push|set up|adjust|pad|cover|tuck',l2:'Checks it before play',k2:'check|before|start|inspect|set up'},
+ {x:128,y:330,r:50,win:[18.5,25],tm:22,cat:'People',t:'Doubles partners both going for the same shuttle',who:'Both partners',harm:'Racket hitting a partner’s face or eye',L:2,S:3,ok:'Teach doubles positions and calling (“mine!” / “yours!”), and start with drills where each player has a clear zone',bad:['Tell them to swing slower','Let the stronger player take every shot'],why:'Communication and clear zones are the control. That means planning the right progression for the group’s ability.',lvl:4,l1:'Uses calling or communication',k1:'call|shout|mine|yours|communicat|talk|say',l2:'Teaches positions or zones',k2:'position|zone|side|front|back|teach|coach|drill|progress|formation'},
+ {x:640,y:446,r:44,win:[29.5,40],tm:36,at:t=>{const b=bBot(t);return{x:b[0],y:b[1]}},cat:'Environment',t:'Water bottle rolling onto the court',who:'Players moving across the court',harm:'Slipping or tripping: ankle injuries',L:2,S:2,ok:'Keep bottles and bags in a set area away from the courts, and stop play straight away if anything rolls on',bad:['Players should jump over it','Finish the rally first, then move it'],why:'Kit needs a set place away from the playing area, and a clear stop rule deals with the moment something goes wrong.',lvl:1,l1:'Keeps kit in a set area away from the courts',k1:'away|area|zone|store|bench|wall|bag|off court|set place|remov|move',l2:'Stops play when something rolls on',k2:'stop|pause|let|halt|call|freeze'}]},
+{title:'Football: Coaching Session',icon:'⚽',clip:true,dur:40,brief:'Year 10 pupils leading a football session: a passing drill on the left, a small-sided game on the right. Tap or pause when you see a hazard.',draw:c2,
+ hid:['Players not wearing shin pads','Big size and strength differences in a contact game','No first aid kit or phone out on the field','Goalkeeper with no gloves diving at feet'],
+ tw:'A player goes down after a head clash and seems confused. What should happen next, and what should your plan include?',ta:'Stop play. If in doubt, sit them out: they do not return to play that day. Get first aid or medical help, watch for worsening signs, record it and inform parents. Your plan should include a concussion procedure, a named first aider and how to call 999.',
+ hz:[
+ {x:738,y:262,r:52,win:[6,12.5],tm:9,cat:'People',t:'Player hanging off the crossbar',who:'The player and anyone near the goal',harm:'Goal tipping over: crush injury, which can be fatal',L:2,S:3,ok:'Set a strict no-climbing rule, and make sure goals are anchored or weighted before the session',bad:['It is fine if they only hang for a second','Ask a friend to hold the post'],why:'Goals tipping over have killed young players. Anchor every goal and never allow climbing or hanging.',lvl:4,l1:'Makes the goal secure',k1:'anchor|weight|peg|secure|sandbag|fix|stake',l2:'Sets a no-hanging rule',k2:'no climb|no hang|rule|never|stop|get down|not allowed|ban|don\'t'},
+ {x:521,y:250,r:52,win:[16,22],tm:19.5,cat:'People',t:'Two players going for the same header',who:'Both players',harm:'Head clash: concussion, cuts',L:2,S:3,ok:'Take heading out of the practice (follow FA heading guidance for the age group) and teach players to call for the ball',bad:['Tell them to head it softly','Let them carry on unless someone is bleeding'],why:'FA guidance limits heading in youth football. Removing it from the practice and teaching calling stops the clash.',lvl:1,l1:'Removes or limits heading',k1:'no head|remov|ban|ground|feet|not allow|limit|stop head|don\'t head|take out',l2:'Calling for the ball or concussion awareness',k2:'call|shout|communicat|mine|concuss|guid|fa '},
+ {x:262,y:335,r:52,win:[25,30.5],tm:28.5,cat:'Procedures',t:'Slide tackle from behind in a passing drill',who:'The player being tackled',harm:'Ankle and knee injuries, fractures',L:2,S:3,ok:'Make the drill non-contact with no slide tackles, brief it at the start and stop play straight away if it happens',bad:['Tell them to tackle more gently','Only allow slide tackles on soft grass'],why:'The rules must suit the group and the aim of the session. Brief them and enforce them.',lvl:4,l1:'Bans slide tackles or sets a non-contact rule',k1:'no slid|non-contact|non contact|no tackl|ban|not allowed|rule|remov|no contact',l2:'Briefs and enforces it',k2:'brief|explain|start|enforce|stop|whistle|sanction|tell them before|remind'},
+ {x:265,y:412,r:46,win:[31,40],tm:36,at:t=>{const b=fSB(t);return{x:b[0],y:b[1]}},cat:'Environment',t:'Stray ball rolling into the passing drill',who:'Players running in the drill',harm:'Stepping on the ball: ankle injuries',L:3,S:2,ok:'Leave a clear gap between groups, and use a “stop” call or whistle whenever a stray ball comes in',bad:['Kick it away while running','Keep going and collect stray balls at the end'],why:'Space between groups keeps them apart, and a stop call deals with the moment it happens.',lvl:3,l1:'Spaces the groups apart',k1:'space|gap|apart|distance|separat|spread|further|away',l2:'Uses a stop call or whistle',k2:'stop|whistle|call|pause|freeze'},
+ {x:358,y:458,r:42,cat:'Equipment',t:'Bibs, balls and a kit bag dumped between the pitches',who:'Players running out of the grids',harm:'Tripping: sprains and falls',L:2,S:2,ok:'Keep a kit area well away from the playing areas, and put kit back there after each activity',bad:['Push the pile into a smaller heap','Tell players to watch where they run'],why:'Kit storage is part of the session layout. Plan where kit goes.',lvl:1,l1:'Moves kit to a set area away from play',k1:'kit area|store|away|bag|box|remov|tidy|put away|set area|move|side',l2:'Builds it into the routine',k2:'after|each|every|before|plan|layout|routine'}]}];
+
+const X0=[
+[[1,'Gets the benches out of the playing area','move|remov|clear|take|put away|put them|store|side|out of','Does it before the session starts','before|check|start|prior|set up'],
+ [1,'Dries or cleans the floor','dry|mop|wipe|clean|towel|soak','Stops it happening again (e.g. a bottle zone)','bottle|water zone|drink|area|off court|lid|away'],
+ [1,'Moves the bags out of the playing space','changing|store|away|move|remov|put|locker|corner|take','Sets a place for bags before the session','before|check|designated|set area|out of|place|zone'],
+ [1,'Clears the fire exit','clear|move|remov|unblock|take','Checks exits every time','check|before|every|always|plan|evac|start'],
+ [1,'Removes the jewellery','remov|take off|take out|off','Checks before the activity (or tapes studs per policy)','tape|before|check|policy|start']],
+[[2,'Secures the goal','anchor|peg|weight|sandbag|secure|fix|stake','Checks it and bans swinging','check|before|swing|hang|climb'],
+ [1,'Removes the glass safely','pick|remov|clear|sweep|collect|bin|litter|take','Checks the pitch before the session','check|walk|before|glove|inspect'],
+ [3,'Keeps players away from the hole','cone|mark|avoid|move|away|fill|block|isolat|out of|different','Reports it to get it fixed','report|site|caretaker|fix|repair|tell'],
+ [1,'Stops and moves indoors','indoor|inside|stop|cancel|postpone|go in|move in|get off'],
+ [3,'Moves play away from the car park or fences it off','move|away|fence|barrier|distance|net|block|further','Sets a rule about fetching balls','rule|adult|teacher|staff|never|not allowed|ask']],
+[[4,'Makes sure a lifeguard is in place','lifeguard|qualified|supervis','Nobody enters until they are','not enter|no one|nobody|wait|until|before|out of the water|don\'t'],
+ [4,'Sets a walking rule','walk|no running|rule|don\'t run|do not run','Briefs and enforces it','brief|enforce|supervis|remind|sanction|whistle|start'],
+ [1,'Bans diving in shallow water','no diving|ban|not allowed|feet first|sitting|steps|stop|don\'t dive|do not dive|jump','Uses depth signs or a briefing','sign|depth|brief|deep end|shallow'],
+ [1,'Stores the equipment away','store|put away|box|rack|tidy|remov|clear|move','Says when (after use)','after|each|designated|set place|every'],
+ [4,'Replaces or checks the rescue pole','check|replace|find|put back|get|return','Before the session starts','before|start|don\'t start|not start|plan|emergency']],
+[[3,'Keeps people out of the landing area','cone|rope|mark|tape|off|area|zone|barrier','Uses a collect signal','collect|signal|whistle|only when|until|after|all thrown|command'],
+ [3,'Moves waiting pupils behind a line','behind|line|back|distance|away|mark|zone','Says where they wait','wait|stand|turn|only one|thrower'],
+ [1,'Removes and stores the javelins','collect|remov|rack|store|put away|take out|pull','Carries them safely','carry|point|down|vertical|upright'],
+ [3,'Turns the rake prongs down','prongs down|prong|face down|teeth down|flat|turn|upside','Keeps it away from the landing area','away|side|store|out of|not near'],
+ [2,'Provides water','water|drink|hydrat','Adds shade, sun protection or breaks','shade|sun cream|suncream|hat|break|rest|shorter|resched|cool']],
+[[3,'Creates clear space behind the treadmill','space|move|gap|clear|room|distance|away','Says how much or where','behind|back|metre|2m|2 m'],
+ [4,'Uses a spotter or safety bars','spot|safety bar|catcher|partner|supervis','Matches weight to ability','lighter|weight|ability|technique|train'],
+ [1,'Racks the weights','rack|put away|store|return|tidy|pick up|remov','Makes it a rule after every use','after|rule|each|brief|every'],
+ [1,'Removes or covers the lead','remov|unplug|wall socket|cover|tape down|reroute|move|away','Keeps walkways clear','walkway|trip|path|socket|outlet'],
+ [1,'Takes the machine out of use','out of use|out of order|don\'t use|stop using|not use|ban|close|remov|isolat|sign|label','Reports it for repair','report|repair|fix|replace|maintenance|technician']],
+[[1,'Clears the leaves','sweep|clear|brush|remov|blow|rake','Checks first or moves courts','before|check|another court|indoor|move'],
+ [2,'Fits padding','pad|cover|protect|cushion','Checks before play','before|check|fit|attach'],
+ [3,'Keeps play away from the fence','cone|avoid|away|block|mark|isolat|keep|tape','Reports it for repair','report|repair|fix|caretaker|site'],
+ [1,'Does not use the icy court','cancel|indoor|inside|postpone|don\'t use|not use|grit|salt|move|another court|stop','Checks the surface first','check|before|surface|inspect'],
+ [2,'Changes the layout or direction','face|direction|turn|position|layout|organis|organiz|angle|swap|move','Adds another idea (caps, swapping ends)','cap|visor|sunglass|change ends|rotate|switch']]];
+const H0=[
+ {hid:['A pupil with asthma whose inhaler is in the changing room','Hard balls used instead of foam dodgeballs','No warm-up before sudden changes of direction','30 pupils and 1 adult: is that enough supervision?'],tw:'Halfway through, a pupil is hit in the face and has a nosebleed. What do you do, and what should your plan already include?',ta:'Stop the game and give first aid (gloves on, lean forward, pinch the soft part of the nose). Record it and inform parents. Your plan should name the first aider, where the first aid kit is and how to get help.'},
+ {hid:['Players not wearing shin pads','Big size differences in a contact game','No first aid kit or phone on the far field','Long studs on a hard, frozen pitch'],tw:'Five minutes in, it starts to drizzle and the grass gets slippery. What changes?',ta:'Re-assess and adapt: lower the intensity, remove slide tackles, check footwear grip, shorten the session, and be ready to move indoors if it gets worse.'},
+ {hid:['A pupil with epilepsy who needs a care plan and closer supervision','Non-swimmers mixed in with strong swimmers','Pupils chewing gum in the water','No head count at the start and end'],tw:'A non-swimmer says they can swim and jumps into the deep end. How should your planning have prevented this?',ta:'Check swimming ability before the session, group pupils by ability, use a marked area or coloured caps for non-swimmers, brief the depth rules, and do head counts.'},
+ {hid:['Pupils who have not been taught safe throwing technique','Implements too heavy for the age group','Spikes worn while walking on concrete','Too many pupils per station: bored pupils wander'],tw:'You are the only adult and three events are running at once. How do you reorganise?',ta:'Never run throws unsupervised. Stay at the throwing event, make the other stations low-risk (standing jumps, sprint starts) or pause them, and rotate groups through.'},
+ {hid:['A pupil coming back from a back injury','Pupils using machines they have never been shown how to use','Poor lifting technique','A small, hot room with poor ventilation'],tw:'A pupil wants to max out on the bench press to impress their friends. What do you do?',ta:'Stop it. Set loads to ability and the aim of the session, teach technique first, use a spotter, and set behaviour expectations at the start.'},
+ {hid:['Cold muscles: a winter session needs a longer warm-up','Pupils in thin kit getting cold','Long nails when catching and contesting the ball','Posts at the wrong height or not stable'],tw:'It gets dark at 3:45pm and the session finishes at 4:15pm. What do you plan?',ta:'Check sunset times and floodlights when planning. Shorten or move the session, use bright balls and bibs, and plan pick-up so pupils do not leave in the dark unsupervised.'}];
+S0.forEach((s,si)=>{Object.assign(s,H0[si]);s.hz.forEach((h,hi)=>{const[l,l1,k1,l2,k2]=X0[si][hi];Object.assign(h,{lvl:l,l1,k1,l2:l2||'Explains when or who',k2:k2||'before|check|staff|teacher|leader|plan'})})});
+const S=[...CLIPS,...S0];
+
+/* ---------- helpers ---------- */
+const LADDER=['','Remove it','Make it safer','Keep people away','Rules & supervision','Protective kit'];
+const LADDER_D=['','Get rid of the hazard','Change it so it is less dangerous','Separate people from it','Briefings, rules, spotters, lifeguards','Shin pads, padding, goggles'];
+const WHY='because|so that|so they|so it|so no|so the|so people|stop|prevent|reduce|avoid|means|which|otherwise|less likely|won\'t|cannot|can\'t|to make|safer|lower|to keep';
+const WEAK='careful|be aware|watch out|look out|aware of|be safe|look where|pay attention|mind the|keep an eye';
+const has=(t,k)=>k.split('|').some(w=>t.includes(w));
+const wc=s=>(s||'').trim().split(/\s+/).filter(Boolean).length;
+const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+let SAMPLE=null,DICT=null,micKey=null;
+try{if(window.claude&&claude.use){claude.use('sample').then(s=>{SAMPLE=s}).catch(()=>{});
+ claude.use('dictation').then(d=>{if(!d)return;DICT=d;
+  d.onFinal(({text})=>{if(!micKey)return;const o=micTarget();o[micKey]=((o[micKey]||'')+' '+text).trim();const el=document.querySelector(`[data-a="${micKey}"]`);if(el){el.value=o[micKey];el.dispatchEvent(new Event('input'))}});
+  d.onPartial(({text})=>{const el=document.querySelector(`[data-a="${micKey}"]`);if(el)el.placeholder='🎤 '+text});
+  d.onState(({state})=>{document.querySelectorAll('.mic').forEach(b=>b.classList.toggle('on',state==='listening'&&b.dataset.mic===micKey));if(state==='idle')micKey=null});
+  if(st.view==='hidden')render();}).catch(()=>{})}}catch(e){}
+const micTarget=()=>document.getElementById('sheet')?st.ans[st.cur]:st.hid;
+function micClick(key){if(!DICT)return;if(micKey===key){DICT.stop().catch(()=>{});return}micKey=key;
+ DICT.start().catch(e=>{micKey=null;toast(e&&e.code==='not_granted'?'Microphone not allowed, so please type instead':'Could not start the microphone')})}
+const ta=(o,key,ph,min)=>`<div class="tw"><textarea data-a="${key}" data-min="${min}" placeholder="${esc(ph)}">${esc(o[key]||'')}</textarea>${DICT?`<button class="mic" type="button" data-mic="${key}" title="Speak your answer">🎤</button>`:''}</div><small class="wc" data-wc="${key}">${wc(o[key])} words · aim for ${min}+</small>`;
+function bindTA(root,o){root.querySelectorAll('textarea[data-a]').forEach(el=>{el.oninput=()=>{o[el.dataset.a]=el.value;const w=root.querySelector(`[data-wc="${el.dataset.a}"]`);if(w){const n=wc(el.value),m=+el.dataset.min;w.textContent=`${n} words · aim for ${m}+`;w.style.color=n>=m?'#1e9e57':'';w.className='wc';el.classList.remove('bad')}}});
+ root.querySelectorAll('[data-mic]').forEach(b=>b.onclick=()=>micClick(b.dataset.mic))}
+const need=(o,key,min,what)=>{if(wc(o[key])<min){const el=document.querySelector(`[data-a="${key}"]`),w=document.querySelector(`[data-wc="${key}"]`);if(w){w.innerHTML=`⚠️ Add more detail: ${what} needs at least ${min} words (you have ${wc(o[key])})`;w.className='wc err';void w.offsetWidth;w.classList.add('shake')}if(el){el.classList.add('bad');el.focus();el.scrollIntoView({behavior:'smooth',block:'center'})}return false}return true};
+
+/* ---------- state ---------- */
+let st={view:'home'},timer=null,planner=null,photo=null,raf=null,clip={t:0,playing:false,speed:1,last:0};
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const app=document.getElementById('app');
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+function copyText(t){const fall=()=>{const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="card"><h2>Copy your work</h2><p class="note">Select all and copy, then paste it into your planning document or send it to your teacher.</p><textarea style="min-height:260px">${esc(t)}</textarea><div class="actions"><button class="btn">Close</button></div></div>`;document.body.appendChild(m);m.querySelector('button').onclick=()=>m.remove();const x=m.querySelector('textarea');x.focus();x.select()};
+ try{navigator.clipboard.writeText(t).then(()=>toast('Copied ✔'),fall)}catch(e){fall()}}
+function stopTimer(){if(timer){clearInterval(timer);timer=null}clip.playing=false;if(raf){cancelAnimationFrame(raf);raf=null}}
+function closeSheet(){const m=document.getElementById('sheet');if(m)m.remove()}
+function go(v){stopTimer();closeSheet();st.view=v;render();window.scrollTo(0,0)}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const x=document.getElementById('xb');if(x)x.click()}});
+document.getElementById('homeBtn').onclick=()=>{st.all=false;go('home')};
+const svgFor=(i,vb='0 0 800 500',extra='',t)=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${S[i].draw(t??(S[i].clip?8:undefined))}${extra}</svg>`;
+const maxScene=i=>S[i].hz.length*35+20;
+
+function render(){({home,hunt,hidden,summary,final:finalV,planner:plannerV,photo:photoV,guide})[st.view]()}
+
+function home(){const best=store.get('hh_best2',{});const card=i=>{const s=S[i];return `<button class="sc" data-i="${i}">${svgFor(i)}<div><b>${s.icon} ${s.title}</b><small>${s.clip?'🎬 Animated clip · ':''}${s.hz.length} hazards · ${best[i]!=null?`Best: ${best[i]}/${maxScene(i)}`:'Not played yet'}</small></div></button>`};
+ app.innerHTML=`<section class="hero"><h1>Hazard Hunt 🔍</h1><p>Cambridge Nationals Sport Studies: planning and leading <b>safe</b> sessions. Spotting a hazard is only the start. A good leader explains <b>who</b> could be hurt and <b>how</b> they would stop it.</p>
+ <div class="steps"><div class="step"><b>1 · Spot it</b>Tap the hazard, then describe what you can see in your own words.</div><div class="step"><b>2 · Explain it</b>Who could be hurt, how badly, and how likely is it? Rate the risk.</div><div class="step"><b>3 · Control it</b>Type or say how YOU would minimise it, then improve your answer.</div></div>
+ <div class="actions"><button class="btn lime" id="all">▶ Play all 8 scenes</button><button class="btn ghost" id="gd">📘 Risk guide</button></div></section>
+ <h2>🎬 Clips: badminton and football</h2><p class="note" style="margin-top:-4px">Hazards only appear for a few seconds, so watch closely. Pause and tap, or tap while it plays.</p><div class="grid">${[0,1].map(card).join('')}</div>
+ <h2>🖼️ Scenes</h2><div class="grid">${S.map((_,i)=>i).slice(2).map(card).join('')}</div>
+ <h2>Use your own sessions</h2><div class="tools">
+ <button class="tool" id="ph"><b>🎥 Hazard hunt on your own video or photo</b><small>Upload a clip filmed in your lesson (e.g. a pupil leading a warm-up) or a photo of your venue. Pause, tag hazards at timestamps and write controls.</small></button>
+ <button class="tool" id="pl"><b>📝 Session risk assessment builder</b><small>Plan the badminton or football session you will lead: hazards, ratings, controls, pre-session checks and an emergency action plan.</small></button></div>
+ <h2>Teacher notes</h2><div class="card note">
+ <p><b>The aim:</b> pupils cannot see the model answer until they have written their own. The game checks each answer against two success criteria for that hazard and an “explains why” criterion, and it flags vague controls like “be careful”. Pupils then redraft their answer, so you can see the first attempt and the improved one side by side.</p>
+ <p><b>Control ladder:</b> pupils say which type of control they chose (remove → make safer → keep away → rules → kit) and compare it with the model answer. That’s the “think beyond telling them to be careful” moment.</p>
+ <p><b>Think outside the box:</b> after each scene pupils name a hazard that is <i>not</i> in the picture (medical needs, ratios, warm-ups), then answer a “What if…?” curveball.</p>
+ <p><b>Evidence:</b> the end screen gives a named evidence sheet with every answer, which pupils copy and submit. ${'🤖 Claude feedback and 🎤 speaking answers aloud appear only for viewers signed in to Claude. Everyone else gets the built-in checker and types their answers.'}</p>
+ <p><b>Film it:</b> record pupils leading part of their session, then run the video hunt on it as a class. It’s real footage of their own planning.</p></div>`;
+ app.querySelectorAll('.sc').forEach(b=>b.onclick=()=>{st.all=false;startScene(+b.dataset.i)});
+ all.onclick=()=>{st.all=true;st.total=0;st.allLog=[];startScene(0)};gd.onclick=()=>go('guide');pl.onclick=()=>go('planner');ph.onclick=()=>go('photo')}
+
+function startScene(i){Object.assign(st,{si:i,found:new Set(),score:0,miss:0,hints:0,t0:Date.now(),ans:{},confirmDone:false,queue:null,hid:{}});clip.t=0;clip.speed=1;go('hunt')}
+
+function hunt(){const sc=S[st.si],n=sc.hz.length;
+ app.innerHTML=`<div class="bar"><div><h1>${sc.icon} ${st.all?`${st.si+1}/${S.length} · `:''}${sc.title}</h1><p>${sc.brief} <b>Find ${n} hazards.</b></p></div>
+ <div class="stats"><span class="pill" id="fc">🔍 0/${n}</span><span class="pill" id="scr">⭐ 0</span>${sc.clip?'':'<span class="pill" id="tm">⏱ 0:00</span>'}</div></div>
+ <div class="stage"><svg id="scn" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><g id="world">${sc.clip?sc.draw(0):sc.draw()}</g><g id="marks"></g></svg><div class="live">${sc.clip?'CLIP':'LIVE'}</div></div>
+ ${sc.clip?`<div class="player"><button class="pbtn" id="pp">▶</button><div class="track" id="trk"><div class="fill" id="fill"></div>${''}</div><span id="ct">0:00 / ${fmt(sc.dur)}</span><button class="pbtn sm" id="spd">1×</button></div>`:''}
+ <div class="chips" id="chips"></div>
+ <div class="actions"><button class="btn ghost" id="hint">💡 Hint (−3)</button><button class="btn" id="done">Finished spotting →</button></div>`;
+ const svg=document.getElementById('scn'),marks=document.getElementById('marks'),world=document.getElementById('world');marks.style.pointerEvents='none';
+ const upd=()=>{fc.textContent=`🔍 ${st.found.size}/${n}`;scr.textContent=`⭐ ${st.score}`;chips.innerHTML=[...st.found].map(i=>`<button class="chip" data-h="${i}">✔ ${esc(sc.hz[i].t)}${st.ans[i]&&st.ans[i].step>=4?'':' ✏️'}</button>`).join('');chips.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>openSheet(+b.dataset.h))};
+ if(!sc.clip)timer=setInterval(()=>{const e=document.getElementById('tm');if(e)e.textContent=`⏱ ${fmt((Date.now()-st.t0)/1000)}`},1000);
+ const drawClip=()=>{world.innerHTML=sc.draw(clip.t);fill.style.width=(clip.t/sc.dur*100)+'%';ct.textContent=`${fmt(clip.t)} / ${fmt(sc.dur)}`;pp.textContent=clip.playing?'⏸':(clip.t>=sc.dur?'↺':'▶')};
+ const loop=ts=>{if(!clip.playing)return;if(clip.last)clip.t+=Math.min(.1,(ts-clip.last)/1000)*clip.speed;clip.last=ts;if(clip.t>=sc.dur){clip.t=sc.dur;clip.playing=false;toast(st.found.size<n?'Clip finished. Replay it to catch the rest':'Clip finished')}drawClip();if(clip.playing)raf=requestAnimationFrame(loop)};
+ const play=()=>{if(clip.t>=sc.dur)clip.t=0;clip.playing=true;clip.last=0;raf=requestAnimationFrame(loop)};
+ const pause=()=>{clip.playing=false;if(raf)cancelAnimationFrame(raf);drawClip()};
+ if(sc.clip){pp.onclick=()=>clip.playing?pause():play();spd.onclick=()=>{clip.speed=clip.speed===1?.5:1;spd.textContent=clip.speed===1?'1×':'🐢 ½×'};
+  trk.onclick=e=>{const r=trk.getBoundingClientRect();clip.t=Math.max(0,Math.min(sc.dur,(e.clientX-r.left)/r.width*sc.dur));drawClip()};drawClip()}
+ const posOf=h=>sc.clip&&h.at?h.at(clip.t):{x:h.x,y:h.y};
+ const active=h=>!sc.clip||!h.win||(clip.t>=h.win[0]&&clip.t<=h.win[1]);
+ const inside=(h,p)=>{if(!active(h))return false;const c=posOf(h);return [[c.x,c.y,h.r],...(h.alt||[])].some(([x,y,r])=>Math.hypot(p.x-x,p.y-y)<=r)};
+ svg.addEventListener('click',e=>{const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+  if(sc.hz.some((h,i)=>st.found.has(i)&&inside(h,p)))return;
+  const hit=sc.hz.findIndex((h,i)=>!st.found.has(i)&&inside(h,p));
+  if(hit>=0){st.found.add(hit);st.score+=10;const h=sc.hz[hit],c=posOf(h);if(sc.clip){pause();h.seenAt=clip.t}
+   marks.insertAdjacentHTML('beforeend',`<g class="${sc.clip?'miss':''}" style="${sc.clip?'animation-duration:3s':''}"><circle cx="${c.x}" cy="${c.y}" r="${h.r*.8}" fill="#00e67622" stroke="#00e676" stroke-width="5"/><circle cx="${c.x}" cy="${c.y}" r="15" fill="#00c853" stroke="#fff" stroke-width="3"/><text x="${c.x}" y="${c.y+6}" text-anchor="middle" font-size="17" font-weight="800" fill="#fff" font-family="Lexend,sans-serif">${st.found.size}</text></g>`);
+   if(sc.clip)trk.insertAdjacentHTML('beforeend',`<span class="tick" style="left:${clip.t/sc.dur*100}%"></span>`);
+   upd();setTimeout(()=>openSheet(hit),350)}
+  else{st.miss++;st.score=Math.max(0,st.score-2);marks.insertAdjacentHTML('beforeend',`<g class="miss"><path d="M${p.x-12} ${p.y-12}L${p.x+12} ${p.y+12}M${p.x+12} ${p.y-12}L${p.x-12} ${p.y+12}" stroke="#d63031" stroke-width="6" stroke-linecap="round"/></g>`);upd()}});
+ hint.onclick=()=>{const i=sc.hz.findIndex((h,j)=>!st.found.has(j));if(i<0)return;st.hints++;st.score=Math.max(0,st.score-3);const h=sc.hz[i];
+  if(sc.clip&&h.win){toast(`💡 Watch closely around ${fmt(h.win[0])}–${fmt(h.win[1])}`);upd();return}
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.innerHTML=`<circle class="hintring" cx="${h.x+(Math.random()*30-15)}" cy="${h.y+(Math.random()*30-15)}" r="${h.r*1.7}" fill="none" stroke="#ffd400" stroke-width="6" stroke-dasharray="14 10"/>`;marks.appendChild(g);setTimeout(()=>g.remove(),3000);upd()};
+ done.onclick=()=>{const unfinished=[...st.found].find(i=>!(st.ans[i]&&st.ans[i].step>=4));if(unfinished!=null){toast('Finish your answer for this hazard first');openSheet(unfinished);return}
+  if(st.found.size<n&&!st.confirmDone){st.confirmDone=true;done.textContent=`Sure? ${n-st.found.size} still hidden. Tap again`;return}
+  stopTimer();st.secs=Math.floor((Date.now()-st.t0)/1000);st.queue=sc.hz.map((_,i)=>i).filter(i=>!st.found.has(i));
+  if(st.queue.length){toast(`You missed ${st.queue.length}. Now write controls for them too`);openSheet(st.queue[0])}else go('hidden')};
+ upd()}
+
+function openSheet(i){st.cur=i;const sc=S[st.si],h=sc.hz[i],found=st.found.has(i);
+ const a=st.ans[i]||(st.ans[i]={step:found?0:1});
+ let m=document.getElementById('sheet');if(!m){m=document.createElement('div');m.id='sheet';m.className='modal';document.body.appendChild(m)}
+ const vx=Math.max(0,Math.min(540,h.x-130)),vy=Math.max(0,Math.min(340,h.y-80));
+ const ring=`<circle cx="${h.x}" cy="${h.y}" r="${h.r*.8}" fill="none" stroke="${found?'#00e676':'#ff5252'}" stroke-width="4" stroke-dasharray="${found?'':'10 6'}"/>`;
+ const rated=a.L&&a.S,r=rated?a.L*a.S:0,[bn,bc]=band(r);
+ let H=`<div class="card sheet"><div class="xwrap"><button class="xbtn" id="xb" title="Close" aria-label="Close">✕</button></div><div class="mini">${svgFor(st.si,`${vx} ${vy} 260 160`,ring,sc.clip?(h.win?(h.seenAt??h.tm):8):undefined)}</div>`;
+ if(a.step===0){H+=`<h2>🔍 What have you spotted?</h2><p class="note">Describe the hazard in your own words before we tell you what it is.</p>${ta(a,'name','e.g. There is a … on the floor where people are running',3)}<div class="actions"><button class="btn lime" data-go="1">Check →</button></div>`}
+ else{H+=`<span class="tag t-cat">${h.cat}</span><span class="tag ${found?'t-found':'t-miss'}">${found?'You spotted this':'You missed this one'}</span><h2>${esc(h.t)}</h2>${a.name?`<p class="note">You said: “${esc(a.name)}”</p>`:''}
+  <h3>1. Who could be harmed, and how?</h3>`;
+  if(a.step===1)H+=`${ta(a,'who','e.g. Players running near the wall could trip and…',5)}<div class="actions"><button class="btn lime" data-go="2">Next →</button></div>`;
+  else H+=`<p class="ans">${esc(a.who)}</p><p class="model"><b>Model:</b> ${esc(h.who)}: ${esc(h.harm)}</p>`}
+ if(a.step>=2){H+=`<h3>2. Rate the risk</h3><div class="seg" data-k="L">${[1,2,3].map(v=>`<button class="${a.L===v?'on':''}" data-v="${v}">${v} · ${LN[v]}<small>${LD[v]}</small></button>`).join('')}</div><div class="seg" data-k="S" style="margin-top:8px">${[1,2,3].map(v=>`<button class="${a.S===v?'on':''}" data-v="${v}">${v} · ${SN[v]}<small>${SD[v]}</small></button>`).join('')}</div>
+  ${rated?`<div class="riskbox" style="background:${bc}">Your rating: ${a.L} × ${a.S} = ${r} · ${bn} risk</div>`:''}${a.step===2?`<div class="actions"><button class="btn lime" data-go="3" ${rated?'':'disabled'}>Next →</button></div>`:''}`}
+ if(a.step>=3){H+=`<h3>3. How would YOU minimise the risk?</h3>`;
+  if(a.step===3){H+=`<p class="note">Be specific: <b>what</b> you would do, <b>when</b>, and <b>why</b> it makes it safer. “Tell them to be careful” won’t score.</p>
+  <div class="starters">${['Before the session I would…','I would remove / move … so that…','To keep people away from it I would…','I would set a rule that… and check it by…'].map(s=>`<button type="button" data-st="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+  ${ta(a,'ctrl','Type or say your control measure…',8)}
+  <h3>What type of control is your answer?</h3><div class="ladder">${[1,2,3,4,5].map(v=>`<button class="${a.lvlU===v?'on':''}" data-lv="${v}"><b>${v}</b> ${LADDER[v]}<small>${LADDER_D[v]}</small></button>`).join('')}</div>
+  <div class="actions"><button class="btn lime" data-go="4">Submit my answer →</button></div>`}
+  else{const c=a.crit;H+=`<p class="ans">${esc(a.ctrl)}</p>
+  <div class="fb"><b>Success criteria: ${c.filter(Boolean).length}/3 (+${c.filter(Boolean).length*5} ⭐)</b><ul class="crit">${[h.l1,h.l2,'Explains why it makes it safer'].map((l,j)=>`<li>${c[j]?'✅':'⬜'} ${esc(l)}</li>`).join('')}</ul>
+  ${a.weak?'<p class="warn">⚠️ Your answer sounds like a warning (“be careful”, “watch out”). Warnings rely on people remembering. What would you actually <b>do</b> to the hazard?</p>':''}
+  <p><b>Control ladder:</b> you chose <b>${a.lvlU} · ${LADDER[a.lvlU]}</b>. The model answer is <b>${h.lvl} · ${LADDER[h.lvl]}</b>. ${a.lvlU>h.lvl?'Could you go higher up the ladder?':a.lvlU<h.lvl?'You aimed higher than the model, so check it is realistic in the session.':'Same type of control. 👍'}</p></div>
+  <div class="model"><b>Model answer:</b> ${esc(h.ok)}<br><small>${esc(h.why)}</small><br><small><b>Expert rating:</b> ${h.L} × ${h.S} = ${h.L*h.S} (${band(h.L*h.S)[0]}) · yours ${r} ${a.close?'✔ +5':''}</small></div>
+  ${SAMPLE?`<div class="actions"><button class="btn ghost" id="ask">🤖 Get feedback from Claude</button></div><div id="cfb">${a.claude?a.claude:''}</div>`:''}
+  <h3>4. Improve your answer ✏️</h3><p class="note">Rewrite your control using what you have learned. Add <b>when</b> you would do it, <b>who</b> does it, or <b>how you’d check</b> it.</p>
+  ${ta(a,'imp','My improved control is…',10)}
+  <div class="actions"><button class="btn lime" id="fin">${st.queue&&st.queue.length?'Save & next hazard →':(sc.clip?'Save & back to the clip →':'Save & back to the scene →')}</button></div>`}}
+ H+=`</div>`;m.innerHTML=H;const card=m.querySelector('.sheet');bindTA(card,a);
+ card.querySelector('#xb').onclick=()=>{closeSheet();if(st.queue)st.queue=null;toast(a.step>=5?'Saved':'Closed. Tap the ✏️ hazard below the scene to finish it later')};
+ card.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{a.ctrl=((a.ctrl||'')+' '+b.dataset.st.replace('…','')).trim()+' ';const el=card.querySelector('[data-a="ctrl"]');el.value=a.ctrl;el.focus();el.dispatchEvent(new Event('input'))});
+ card.querySelectorAll('.seg').forEach(sg=>sg.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(a.step>3)return;a[sg.dataset.k]=+b.dataset.v;openSheet(i)}));
+ card.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{a.lvlU=+b.dataset.lv;card.querySelectorAll('[data-lv]').forEach(x=>x.classList.toggle('on',x===b))});
+ card.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=+b.dataset.go;
+  if(g===1&&!need(a,'name',3,'your description'))return;
+  if(g===2&&!need(a,'who',5,'your answer'))return;
+  if(g===4){if(!need(a,'ctrl',8,'your control'))return;if(!a.lvlU){toast('Choose what type of control your answer is');return}
+   const t=a.ctrl.toLowerCase();a.crit=[has(t,h.k1),has(t,h.k2),has(t,WHY)];a.weak=has(t,WEAK)&&!a.crit[0];a.close=Math.abs(a.L*a.S-h.L*h.S)<=2;
+   a.pts=a.crit.filter(Boolean).length*5+(a.close?5:0);st.score+=a.pts;const s=document.getElementById('scr');if(s)s.textContent=`⭐ ${st.score}`}
+  a.step=g;openSheet(i);if(g===4)setTimeout(()=>{const f=card.closest('.modal');if(f)f.scrollTop=0},0)});
+ const ask=card.querySelector('#ask');if(ask)ask.onclick=async()=>{ask.disabled=true;ask.textContent='🤖 Reading your answer…';const box=card.querySelector('#cfb');
+  const ans=a.imp&&wc(a.imp)>=5?a.imp:a.ctrl;
+  const prompt=`You are a supportive PE teacher marking a Cambridge Nationals Sport Studies (age 14-16) pupil's risk assessment answer.\nScenario: ${sc.brief}\nHazard: ${h.t}\nModel control: ${h.ok}\nPupil's control measure: """${ans}"""\nReply ONLY with JSON: {"verdict":"Strong" or "Getting there" or "Needs more","well":"one short sentence on what they did well","next":"one short, specific sentence on how to improve it, e.g. remove the hazard rather than warn, say when they would check, or who is responsible. Do not just give them the model answer."}\nUse simple, encouraging language.`;
+  try{let v;try{v=await SAMPLE.json(prompt,{modelTier:'quick'})}catch(e){if(e&&e.code)throw e;const r=await SAMPLE(prompt,{modelTier:'quick'});v=JSON.parse(r.text.replace(/^[^{]*/,'').replace(/[^}]*$/,''))}
+   a.claude=`<div class="claude"><b>🤖 ${esc(v.verdict||'Feedback')}</b><br>👍 ${esc(v.well||'')}<br>➡️ ${esc(v.next||'')}</div>`;box.innerHTML=a.claude;ask.remove()}
+  catch(e){ask.disabled=false;ask.textContent='🤖 Get feedback from Claude';if(e&&e.code==='not_granted'){ask.remove();return}toast(e&&e.code==='rate_limited'?'Claude is busy. Try again in a minute':'Feedback isn’t available right now')}};
+ const fin=card.querySelector('#fin');if(fin)fin.onclick=()=>{if(a.imp&&wc(a.imp)>=10&&!a.impPts){a.impPts=5;st.score+=5;toast('+5 ⭐ for improving your answer')}
+  a.step=5;closeSheet();
+  if(st.queue&&st.queue.length){st.queue=st.queue.filter(x=>x!==i);if(st.queue.length)openSheet(st.queue[0]);else go('hidden')}
+  else{const sc2=document.getElementById('scr');if(sc2)sc2.textContent=`⭐ ${st.score}`;const ch=document.getElementById('chips');if(ch)ch.querySelectorAll('[data-h]').forEach(b=>{if(+b.dataset.h===i)b.textContent='✔ '+h.t});
+   if(st.found.size===sc.hz.length){const d=document.getElementById('done');if(d){d.textContent='All found! Think outside the box →';d.classList.add('lime')}}}}}
+
+function hidden(){const sc=S[st.si],o=st.hid;
+ app.innerHTML=`<div class="bar"><div><h1>🧠 Think outside the box</h1><p>${sc.icon} ${sc.title} · ⭐ ${st.score}</p></div></div>
+ <div class="card"><h2>1. The hazards you can’t see</h2><p>Not every hazard is in the picture. A good leader plans for people’s medical needs, numbers, ability, warm-ups and the unexpected. <b>Name one hazard in this session that you CAN’T see, and say how you would control it.</b></p>
+ ${o.s1?`<p class="ans">${esc(o.hidA)}</p><div class="model"><b>Hazards other leaders planned for. Tick any you thought of:</b>${sc.hid.map((x,j)=>`<label class="tick"><input type="checkbox" data-hk="${j}" ${o['k'+j]?'checked':''}> ${esc(x)}</label>`).join('')}<p class="note" style="margin:6px 0 0">Which of these would affect YOUR session? Add them to your risk assessment.</p></div>`
+ :`${ta(o,'hidA','e.g. A pupil might have asthma, so I would check medical info before the session and…',12)}<div class="actions"><button class="btn lime" id="s1">Submit →</button></div>`}</div>
+ ${o.s1?`<div class="card" style="margin-top:12px"><h2>2. What if…? 🎲</h2><p><b>${esc(sc.tw)}</b></p>
+ ${o.s2?`<p class="ans">${esc(o.twA)}</p><div class="model"><b>A strong answer:</b> ${esc(sc.ta)}</div><div class="actions"><button class="btn lime" id="nx">See my evidence sheet →</button></div>`
+ :`${ta(o,'twA','What would you do straight away, and what should your plan have included?',15)}<div class="actions"><button class="btn lime" id="s2">Submit →</button></div>`}</div>`:''}`;
+ bindTA(app,o);
+ app.querySelectorAll('[data-hk]').forEach(c=>c.onchange=()=>o['k'+c.dataset.hk]=c.checked);
+ const b1=document.getElementById('s1');if(b1)b1.onclick=()=>{if(!need(o,'hidA',12,'your answer'))return;o.s1=1;st.score+=10;hidden()};
+ const b2=document.getElementById('s2');if(b2)b2.onclick=()=>{if(!need(o,'twA',15,'your answer'))return;o.s2=1;st.score+=10;hidden()};
+ const nx=document.getElementById('nx');if(nx)nx.onclick=()=>{const best=store.get('hh_best2',{});best[st.si]=Math.max(best[st.si]||0,st.score);store.set('hh_best2',best);if(st.all){st.total=(st.total||0)+st.score;st.allLog.push(evidenceText())}go('summary')}}
+
+function evidenceText(){const sc=S[st.si];const order=[...[...st.found],...sc.hz.map((_,i)=>i).filter(i=>!st.found.has(i))];
+ return `HAZARD HUNT EVIDENCE: ${sc.title}\nName: ${st.pupil||'____________'}   Date: ${new Date().toLocaleDateString('en-GB')}   Score: ${st.score}/${maxScene(st.si)}\nScenario: ${sc.brief}\n\n`+order.map((i,k)=>{const h=sc.hz[i],a=st.ans[i]||{};return `${k+1}. ${h.t} [${st.found.has(i)?'spotted':'missed'}]\n${a.name?`   I described it as: ${a.name}\n`:''}   Who/harm: ${a.who||'-'}\n   My risk rating: ${a.L||'-'} x ${a.S||'-'} = ${(a.L*a.S)||'-'}  (expert: ${h.L*h.S})\n   My control: ${a.ctrl||'-'}\n   Type of control: ${LADDER[a.lvlU]||'-'} (model: ${LADDER[h.lvl]})\n   Success criteria met: ${(a.crit||[]).filter(Boolean).length}/3\n   Improved control: ${a.imp||'-'}`}).join('\n\n')+`\n\nHIDDEN HAZARD: ${st.hid.hidA||'-'}\nWHAT IF: ${sc.tw}\nMy answer: ${st.hid.twA||'-'}`}
+
+function summary(){const sc=S[st.si],order=[...[...st.found],...sc.hz.map((_,i)=>i).filter(i=>!st.found.has(i))];
+ const critTot=order.reduce((s,i)=>s+((st.ans[i]&&st.ans[i].crit)||[]).filter(Boolean).length,0),impN=order.filter(i=>st.ans[i]&&st.ans[i].impPts).length;
+ app.innerHTML=`<div class="card" style="text-align:center"><p class="note">${sc.icon} ${sc.title}</p><div class="big">${st.score}<span style="font-size:20px;color:var(--mut)"> / ${maxScene(st.si)}</span></div>
+ <p>Spotted <b>${st.found.size}/${sc.hz.length}</b> · Success criteria <b>${critTot}/${sc.hz.length*3}</b> · Answers improved <b>${impN}/${sc.hz.length}</b> · Wrong taps <b>${st.miss}</b></p></div>
+ <h2>📄 Evidence sheet</h2><div class="card"><label>Your name</label><input type="text" id="pn" value="${esc(st.pupil||'')}" placeholder="First name and surname"></div>
+ <div class="tablewrap" style="margin-top:10px"><table><tr><th>Hazard</th><th>My first control</th><th>My improved control</th><th>Criteria</th></tr>
+ ${order.map(i=>{const h=sc.hz[i],a=st.ans[i]||{};return `<tr><td><b>${esc(h.t)}</b><br><small>${st.found.has(i)?'Spotted':'Missed'} · risk ${(a.L*a.S)||'-'} (expert ${h.L*h.S})</small></td><td>${esc(a.ctrl||'-')}<br><small>${LADDER[a.lvlU]||''}</small></td><td>${esc(a.imp||'–')}</td><td>${(a.crit||[]).map(c=>c?'✅':'⬜').join('')}</td></tr>`}).join('')}</table></div>
+ <div class="card" style="margin-top:10px"><b>Hidden hazard:</b> ${esc(st.hid.hidA||'')}<br><b>What if:</b> ${esc(st.hid.twA||'')}</div>
+ <div class="actions"><button class="btn lime" id="cp">📋 Copy evidence sheet</button><button class="btn ghost" id="re">↻ Replay</button>
+ ${st.all?`<button class="btn" id="nx">${st.si<S.length-1?'Next scene →':'Final score →'}</button>`:'<button class="btn" id="hm">More scenes</button>'}</div>
+ <div class="card" style="margin-top:14px"><b>Apply it to your session 💭</b><p class="note" style="margin:6px 0 0">Which of these hazards could happen in the session <i>you</i> are leading? Add them to your plan.</p><div class="actions"><button class="btn ghost" id="pl">📝 Open the risk assessment builder</button></div></div>`;
+ pn.oninput=()=>st.pupil=pn.value;cp.onclick=()=>copyText(evidenceText());re.onclick=()=>startScene(st.si);pl.onclick=()=>go('planner');
+ const nxb=document.getElementById('nx');if(nxb)nxb.onclick=()=>st.si<S.length-1?startScene(st.si+1):go('final');
+ const hmb=document.getElementById('hm');if(hmb)hmb.onclick=()=>go('home')}
+
+function finalV(){const max=S.reduce((s,_,i)=>s+maxScene(i),0),t=st.total||0,p=t/max,rank=p>=.8?['🏆','Head Coach','You think like a real session leader.']:p>=.6?['🥇','Session Leader','Strong. Push your controls higher up the ladder.']:p>=.4?['🥈','Assistant Coach','Good start. Be more specific about what, when and why.']:['🥉','Trainee Leader','Replay the scenes and use the risk guide.'];
+ app.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:60px">${rank[0]}</div><h2>${rank[1]}</h2><div class="big">${t}<span style="font-size:20px;color:var(--mut)"> / ${max}</span></div><p>${rank[2]}</p>
+ <div class="actions" style="justify-content:center"><button class="btn lime" id="cp">📋 Copy all evidence</button><button class="btn ghost" id="pl">📝 Plan my own session</button><button class="btn ghost" id="hm">Home</button></div></div>`;
+ cp.onclick=()=>copyText((st.allLog||[]).join('\n\n==========\n\n'));pl.onclick=()=>go('planner');hm.onclick=()=>{st.all=false;go('home')}}
+
+function photoV(){photo=photo||{url:null,kind:null,pins:[],tag:false};
+ app.innerHTML=`<div class="bar"><div><h1>🎥 Hazard hunt: your own video or photo</h1><p>Film part of a session (or use a photo of your venue). Pause on a hazard, tag it, then explain how you would control it.</p></div></div>
+ <div class="card"><input type="file" accept="video/*,image/*" id="file"><p class="note" style="margin:8px 0 0">Your file stays on this device and is not uploaded anywhere. Only film pupils in line with your school’s photo and video policy.</p></div>
+ <div id="media"></div><div id="pins"></div>`;
+ file.onchange=()=>{const f=file.files[0];if(!f)return;if(photo.url)URL.revokeObjectURL(photo.url);photo={url:URL.createObjectURL(f),kind:f.type.startsWith('video')?'video':'image',pins:[],tag:false};drawMedia();drawPins()};
+ if(photo.url){drawMedia();drawPins()}}
+function drawMedia(){const box=document.getElementById('media');const v=photo.kind==='video';
+ box.innerHTML=`<div class="photo" id="ph" style="margin-top:12px">${v?`<video id="vid" src="${photo.url}" controls playsinline></video>`:`<img src="${photo.url}" alt="Uploaded scene">`}<div id="ov" class="${!v||photo.tag?'ov on':'ov'}"></div><div id="pinlayer"></div></div>
+ ${v?`<div class="actions"><button class="btn lime" id="tagb">📍 Tag a hazard at this moment</button><span class="note" id="tagmsg"></span></div>`:'<p class="note">Tap the picture to pin each hazard.</p>'}`;
+ const ov=document.getElementById('ov'),vid=document.getElementById('vid');
+ ov.onclick=e=>{const r=ov.getBoundingClientRect();photo.pins.push({x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100,time:vid?vid.currentTime:null,t:'',who:'',L:2,S:2,c:''});
+  if(vid){photo.tag=false;ov.classList.remove('on');tagmsg.textContent=''}drawPinLayer();drawPins();setTimeout(()=>{const ins=document.querySelectorAll('#pins .prow');const last=ins[ins.length-1];if(last){last.scrollIntoView({behavior:'smooth',block:'center'});last.querySelector('input').focus()}},50)};
+ if(vid){tagb.onclick=()=>{vid.pause();photo.tag=true;ov.classList.add('on');tagmsg.textContent='Now tap the hazard on the video'};vid.ontimeupdate=drawPinLayer;vid.onseeked=drawPinLayer}
+ drawPinLayer()}
+function drawPinLayer(){const L=document.getElementById('pinlayer');if(!L)return;const vid=document.getElementById('vid');
+ L.innerHTML=photo.pins.map((p,i)=>(p.time==null||(vid&&Math.abs(vid.currentTime-p.time)<1.5))?`<div class="pin" style="left:${p.x}%;top:${p.y}%">${i+1}</div>`:'').join('')}
+function drawPins(){const box=document.getElementById('pins');
+ box.innerHTML=photo.pins.map((p,i)=>{const s=p.L*p.S,[b,c]=band(s);return `<div class="prow" data-i="${i}"><div style="display:flex;justify-content:space-between;align-items:center"><b>📍 Hazard ${i+1}</b>${p.time!=null?`<button class="btn ghost" data-seek="${i}" style="padding:6px 10px">⏱ ${fmt(p.time)}</button>`:''}</div>
+ <input type="text" data-f="t" value="${esc(p.t)}" placeholder="What is the hazard?"><input type="text" data-f="who" value="${esc(p.who)}" placeholder="Who is at risk, and what could happen?">
+ <div class="three"><div><label>Likelihood</label><select data-f="L">${[1,2,3].map(v=>`<option value="${v}" ${p.L==v?'selected':''}>${v} ${LN[v]}</option>`).join('')}</select></div><div><label>Severity</label><select data-f="S">${[1,2,3].map(v=>`<option value="${v}" ${p.S==v?'selected':''}>${v} ${SN[v]}</option>`).join('')}</select></div><span class="badge" style="background:${c};padding:10px">${s} ${b}</span></div>
+ <textarea data-f="c" placeholder="How would you minimise the risk? What, when, and why?">${esc(p.c)}</textarea><div><button class="btn ghost" data-del="${i}">🗑 Remove</button></div></div>`}).join('')+(photo.pins.length?`<div class="actions"><button class="btn lime" id="cpp">📋 Copy my hazard list</button></div>`:'');
+ box.querySelectorAll('.prow').forEach(row=>{const p=photo.pins[+row.dataset.i];row.querySelectorAll('[data-f]').forEach(e=>{const f=e.dataset.f;e.oninput=e.onchange=()=>{p[f]=(f==='L'||f==='S')?+e.value:e.value;if(e.tagName==='SELECT')drawPins()}})});
+ box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{photo.pins.splice(+b.dataset.del,1);drawPins();drawPinLayer()});
+ box.querySelectorAll('[data-seek]').forEach(b=>b.onclick=()=>{const v=document.getElementById('vid');if(v){v.currentTime=photo.pins[+b.dataset.seek].time;v.pause();v.scrollIntoView({behavior:'smooth',block:'center'})}});
+ const cpp=document.getElementById('cpp');if(cpp)cpp.onclick=()=>copyText('HAZARDS SPOTTED IN MY '+(photo.kind==='video'?'VIDEO':'PHOTO')+'\n\n'+photo.pins.map((p,i)=>`${i+1}. ${p.t}${p.time!=null?` (at ${fmt(p.time)})`:''}\n   Who/harm: ${p.who}\n   Risk: ${p.L} x ${p.S} = ${p.L*p.S} (${band(p.L*p.S)[0]})\n   Control: ${p.c}`).join('\n\n'))}
+
+const CHECKS=['Facility checked (floor, surface, exits, lighting)','Equipment checked and suitable for age and ability','Weather checked, with a backup plan','Pupil medical info and injuries checked (asthma, allergies)','Jewellery removed and correct kit worn','First aid kit present and stocked','Group size and supervision ratio are safe','Warm-up and cool-down planned','Rules and safety briefing planned for the start'];
+function plannerV(){planner=planner||store.get('hh_plan',null)||{info:{activity:'',venue:'',group:'',date:'',leader:''},rows:[],checks:{},eap:{aider:'',kit:'',phone:'',access:'',meet:''}};
+ const save=()=>store.set('hh_plan',planner);
+ const bankList=S.flatMap(s=>s.hz.map(h=>({h,label:`${s.icon} ${h.t}`})));
+ app.innerHTML=`<div class="bar"><div><h1>📝 Session risk assessment</h1><p>Plan a session you will lead. Think about <b>People · Equipment · Environment · Procedures</b>.</p></div></div>
+ <div class="card"><div class="two">${[['activity','Activity / sport','e.g. Badminton: introducing the overhead clear'],['venue','Venue','e.g. Sports hall'],['group','Group (age, number, ability)','e.g. 12 Year 7s, mixed ability'],['date','Date','dd/mm/yyyy'],['leader','Session leader','Your name']].map(([k,l,ph])=>`<div><label>${l}</label><input type="text" data-info="${k}" placeholder="${ph}" value="${esc(planner.info[k])}"></div>`).join('')}</div></div>
+ <h2>Hazards & controls</h2><div id="rows">${planner.rows.map((r,i)=>{const s=r.L*r.S,[b,c]=band(s);return `<div class="prow" data-i="${i}">
+ <div class="two"><div><label>Hazard ${i+1}</label><input type="text" data-f="t" value="${esc(r.t)}" placeholder="What could cause harm?"></div><div><label>Category</label><select data-f="cat">${['People','Equipment','Environment','Procedures'].map(x=>`<option ${r.cat===x?'selected':''}>${x}</option>`).join('')}</select></div></div>
+ <div><label>Who is at risk, and what could happen?</label><input type="text" data-f="who" value="${esc(r.who)}"></div>
+ <div class="three"><div><label>Likelihood</label><select data-f="L">${[1,2,3].map(v=>`<option value="${v}" ${r.L==v?'selected':''}>${v} ${LN[v]}</option>`).join('')}</select></div><div><label>Severity</label><select data-f="S">${[1,2,3].map(v=>`<option value="${v}" ${r.S==v?'selected':''}>${v} ${SN[v]}</option>`).join('')}</select></div><span class="badge" style="background:${c};padding:10px">${s} ${b}</span></div>
+ <div><label>Control measures (how will you minimise the risk?)</label><textarea data-f="c" placeholder="Remove it? Reduce it? Keep people away from it? A rule or supervision? PPE?">${esc(r.c)}</textarea></div>
+ <div><button class="btn ghost" data-del="${i}">🗑 Remove</button></div></div>`}).join('')||'<p class="note">No hazards yet. Add your own or pick one from the hazard bank.</p>'}</div>
+ <div class="two"><button class="btn" id="add">+ Add a hazard</button><select id="bankSel"><option value="">+ Add from the hazard bank…</option>${bankList.map((b,j)=>`<option value="${j}">${esc(b.label)}</option>`).join('')}</select></div>
+ <h2>Pre-session checks</h2><div class="card checks">${CHECKS.map((c,i)=>`<label><input type="checkbox" data-ck="${i}" ${planner.checks[i]?'checked':''}> ${c}</label>`).join('')}</div>
+ <h2>Emergency action plan</h2><div class="card two">${[['aider','First aider'],['kit','Where the first aid kit is'],['phone','Nearest phone / how to call 999'],['access','Access route for an ambulance'],['meet','Fire assembly point']].map(([k,l])=>`<div><label>${l}</label><input type="text" data-eap="${k}" value="${esc(planner.eap[k])}"></div>`).join('')}</div>
+ <div class="actions"><button class="btn lime" id="cp">📋 Copy my risk assessment</button><button class="btn ghost" id="clr">Start again</button></div>`;
+ app.querySelectorAll('[data-info]').forEach(e=>e.oninput=()=>{planner.info[e.dataset.info]=e.value;save()});
+ app.querySelectorAll('[data-eap]').forEach(e=>e.oninput=()=>{planner.eap[e.dataset.eap]=e.value;save()});
+ app.querySelectorAll('[data-ck]').forEach(e=>e.onchange=()=>{planner.checks[e.dataset.ck]=e.checked;save()});
+ app.querySelectorAll('.prow').forEach(row=>{const r=planner.rows[+row.dataset.i];row.querySelectorAll('[data-f]').forEach(e=>{const f=e.dataset.f;e.oninput=e.onchange=()=>{r[f]=(f==='L'||f==='S')?+e.value:e.value;save();if(e.tagName==='SELECT'&&(f==='L'||f==='S'))plannerV()}})});
+ app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{planner.rows.splice(+b.dataset.del,1);save();plannerV()});
+ add.onclick=()=>{planner.rows.push({t:'',cat:'Environment',who:'',L:2,S:2,c:''});save();plannerV()};
+ const bs=document.getElementById('bankSel');bs.onchange=()=>{if(bs.value==='')return;const it=bankList[+bs.value].h;planner.rows.push({t:it.t,cat:it.cat,who:`${it.who}: ${it.harm}`,L:it.L,S:it.S,c:''});save();plannerV();toast('Added. Now write your own control measure')};
+ clr.onclick=()=>{if(clr.dataset.sure){planner=null;store.set('hh_plan',null);plannerV()}else{clr.dataset.sure=1;clr.textContent='Tap again to clear everything'}};
+ cp.onclick=()=>{const I=planner.info;copyText(`SESSION RISK ASSESSMENT\nActivity: ${I.activity}\nVenue: ${I.venue}\nGroup: ${I.group}\nDate: ${I.date}\nLeader: ${I.leader}\n\nHAZARDS AND CONTROLS\n`+planner.rows.map((r,i)=>`${i+1}. ${r.t} (${r.cat})\n   Who/harm: ${r.who}\n   Risk: ${r.L} x ${r.S} = ${r.L*r.S} (${band(r.L*r.S)[0]})\n   Controls: ${r.c}`).join('\n\n')+`\n\nPRE-SESSION CHECKS\n`+CHECKS.map((c,i)=>`[${planner.checks[i]?'x':' '}] ${c}`).join('\n')+`\n\nEMERGENCY ACTION PLAN\nFirst aider: ${planner.eap.aider}\nFirst aid kit: ${planner.eap.kit}\nPhone / 999: ${planner.eap.phone}\nAmbulance access: ${planner.eap.access}\nAssembly point: ${planner.eap.meet}`)}}
+
+function guide(){app.innerHTML=`<div class="bar"><div><h1>📘 Risk rating guide</h1><p>The key ideas you need when planning a safe session.</p></div></div>
+ <div class="card"><h3 style="margin-top:0">Hazard or risk?</h3><p><b>Hazard:</b> something that could cause harm (a wet floor).<br><b>Risk:</b> how likely it is that someone is harmed, and how badly (someone slips and breaks a wrist).</p>
+ <h3>Risk = Likelihood × Severity</h3><div class="tablewrap"><table class="matrix"><tr><th></th><th>1 Minor</th><th>2 Moderate</th><th>3 Serious</th></tr>${[3,2,1].map(l=>`<tr><th>${l} ${LN[l]}</th>${[1,2,3].map(s=>{const[b,c]=band(l*s);return `<td style="background:${c}">${l*s} ${b}</td>`}).join('')}</tr>`).join('')}</table></div>
+ <p class="note">High (6–9): do not start until it is controlled. Medium (3–4): control it before or during the session. Low (1–2): monitor it.</p>
+ <h3>Choosing the best control: strongest first</h3><ol><li><b>Remove it</b>: move the benches, clear the glass.</li><li><b>Reduce or replace it</b>: lighter weights, softer balls, a smaller area.</li><li><b>Keep people away from it</b>: cone it off, mark a waiting line.</li><li><b>Rules and supervision</b>: a safety briefing, a spotter, a “walk on poolside” rule.</li><li><b>Protective kit</b>: shin pads, gum shields, helmets.</li></ol>
+ <p class="note">“Tell them to be careful” is almost never the best answer.</p>
+ <h3>Where to look: PEEP</h3><p><b>People</b> (medical needs, jewellery, kit, behaviour, numbers) · <b>Equipment</b> (damaged, unsuitable, left out) · <b>Environment</b> (surface, weather, obstacles, exits) · <b>Procedures</b> (rules, supervision, emergency action plan, first aid)</p></div>
+ <div class="actions"><button class="btn lime" id="bk">Back to the game</button></div>`;bk.onclick=()=>go('home')}
+
+render();
+</script>
+</body>
+</html>
