@@ -530,23 +530,24 @@ function hunt(){const sc=S[st.si],n=sc.hz.length;
  const svg=document.getElementById('scn'),marks=document.getElementById('marks'),world=document.getElementById('world');marks.style.pointerEvents='none';
  const upd=()=>{fc.textContent=`🔍 ${st.found.size}/${n}`;scr.textContent=`⭐ ${st.score}`;chips.innerHTML=[...st.found].map(i=>`<button class="chip" data-h="${i}">✔ ${esc(sc.hz[i].t)}${st.ans[i]&&st.ans[i].step>=4?'':' ✏️'}</button>`).join('');chips.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>openSheet(+b.dataset.h))};
  if(!sc.clip)timer=setInterval(()=>{const e=document.getElementById('tm');if(e)e.textContent=`⏱ ${fmt((Date.now()-st.t0)/1000)}`},1000);
- const drawClip=()=>{world.innerHTML=sc.draw(clip.t);fill.style.width=(clip.t/sc.dur*100)+'%';ct.textContent=`${fmt(clip.t)} / ${fmt(sc.dur)}`;pp.textContent=clip.playing?'⏸':(clip.t>=sc.dur?'↺':'▶')};
- const loop=ts=>{if(!clip.playing)return;if(clip.last)clip.t+=Math.min(.1,(ts-clip.last)/1000)*clip.speed;clip.last=ts;if(clip.t>=sc.dur){clip.t=sc.dur;clip.playing=false;toast(st.found.size<n?'Clip finished. Replay it to catch the rest':'Clip finished')}drawClip();if(clip.playing)raf=requestAnimationFrame(loop)};
+ let lastCt='',lastPp='';const drawClip=()=>{world.innerHTML=sc.draw(clip.t);fill.style.width=(clip.t/sc.dur*100)+'%';const c=`${fmt(clip.t)} / ${fmt(sc.dur)}`;if(c!==lastCt){ct.textContent=c;lastCt=c}const q=clip.playing?'⏸':(clip.t>=sc.dur?'↺':'▶');if(q!==lastPp){pp.textContent=q;lastPp=q}};
+ let lastDraw=0;const loop=ts=>{if(!clip.playing)return;if(clip.last)clip.t+=Math.min(.1,(ts-clip.last)/1000)*clip.speed;clip.last=ts;let end=false;if(clip.t>=sc.dur){clip.t=sc.dur;clip.playing=false;end=true;toast(st.found.size<n?'Clip finished. Replay it to catch the rest':'Clip finished')}if(end||ts-lastDraw>=30){lastDraw=ts;drawClip()}if(clip.playing)raf=requestAnimationFrame(loop)};
  const play=()=>{if(clip.t>=sc.dur)clip.t=0;clip.playing=true;clip.last=0;raf=requestAnimationFrame(loop)};
  const pause=()=>{clip.playing=false;if(raf)cancelAnimationFrame(raf);drawClip()};
- if(sc.clip){pp.onclick=()=>clip.playing?pause():play();spd.onclick=()=>{clip.speed=clip.speed===1?.5:1;spd.textContent=clip.speed===1?'1×':'🐢 ½×'};
-  trk.onclick=e=>{const r=trk.getBoundingClientRect();clip.t=Math.max(0,Math.min(sc.dur,(e.clientX-r.left)/r.width*sc.dur));drawClip()};drawClip()}
+ if(sc.clip){const toggle=()=>clip.playing?pause():play();let ppAt=0;pp.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;ppAt=performance.now();toggle()});pp.addEventListener('click',()=>{if(performance.now()-ppAt<500)return;toggle()});spd.onclick=()=>{clip.speed=clip.speed===1?.5:1;spd.textContent=clip.speed===1?'1×':'🐢 ½×'};
+  let trAt=0;const seek=e=>{const r=trk.getBoundingClientRect();clip.t=Math.max(0,Math.min(sc.dur,(e.clientX-r.left)/r.width*sc.dur));drawClip()};trk.addEventListener('pointerup',e=>{trAt=performance.now();seek(e)});trk.addEventListener('click',e=>{if(performance.now()-trAt<500)return;seek(e)});drawClip()}
  const posOf=h=>sc.clip&&h.at?h.at(clip.t):{x:h.x,y:h.y};
  const active=h=>!sc.clip||!h.win||(clip.t>=h.win[0]&&clip.t<=h.win[1]);
  const inside=(h,p)=>{if(!active(h))return false;const c=posOf(h);return [[c.x,c.y,h.r],...(h.alt||[])].some(([x,y,r])=>Math.hypot(p.x-x,p.y-y)<=r)};
- svg.addEventListener('click',e=>{const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+ let tapAt=0,downXY=null;const onTap=e=>{const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
   if(sc.hz.some((h,i)=>st.found.has(i)&&inside(h,p)))return;
   const hit=sc.hz.findIndex((h,i)=>!st.found.has(i)&&inside(h,p));
   if(hit>=0){st.found.add(hit);st.score+=10;const h=sc.hz[hit],c=posOf(h);if(sc.clip){pause();h.seenAt=clip.t}
    marks.insertAdjacentHTML('beforeend',`<g class="${sc.clip?'miss':''}" style="${sc.clip?'animation-duration:3s':''}"><circle cx="${c.x}" cy="${c.y}" r="${h.r*.8}" fill="#00e67622" stroke="#00e676" stroke-width="5"/><circle cx="${c.x}" cy="${c.y}" r="15" fill="#00c853" stroke="#fff" stroke-width="3"/><text x="${c.x}" y="${c.y+6}" text-anchor="middle" font-size="17" font-weight="800" fill="#fff" font-family="Arial,sans-serif">${st.found.size}</text></g>`);
    if(sc.clip)trk.insertAdjacentHTML('beforeend',`<span class="tick" style="left:${clip.t/sc.dur*100}%"></span>`);
    upd();setTimeout(()=>openSheet(hit),350)}
-  else{st.miss++;st.score=Math.max(0,st.score-2);marks.insertAdjacentHTML('beforeend',`<g class="miss"><path d="M${p.x-12} ${p.y-12}L${p.x+12} ${p.y+12}M${p.x+12} ${p.y-12}L${p.x-12} ${p.y+12}" stroke="#d63031" stroke-width="6" stroke-linecap="round"/></g>`);upd()}});
+  else{st.miss++;st.score=Math.max(0,st.score-2);marks.insertAdjacentHTML('beforeend',`<g class="miss"><path d="M${p.x-12} ${p.y-12}L${p.x+12} ${p.y+12}M${p.x+12} ${p.y-12}L${p.x-12} ${p.y+12}" stroke="#d63031" stroke-width="6" stroke-linecap="round"/></g>`);upd()}};
+ svg.addEventListener('pointerdown',e=>{downXY=[e.clientX,e.clientY]});svg.addEventListener('pointerup',e=>{tapAt=performance.now();if(downXY&&Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>14)return;onTap(e)});svg.addEventListener('click',e=>{if(performance.now()-tapAt<500)return;onTap(e)});
  hint.onclick=()=>{const i=sc.hz.findIndex((h,j)=>!st.found.has(j));if(i<0)return;st.hints++;st.score=Math.max(0,st.score-3);const h=sc.hz[i];
   if(sc.clip&&h.win){toast(`💡 Watch closely around ${fmt(h.win[0])}–${fmt(h.win[1])}`);upd();return}
   const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.innerHTML=`<circle class="hintring" cx="${h.x+(Math.random()*30-15)}" cy="${h.y+(Math.random()*30-15)}" r="${h.r*1.7}" fill="none" stroke="#ffd400" stroke-width="6" stroke-dasharray="14 10"/>`;marks.appendChild(g);setTimeout(()=>g.remove(),3000);upd()};
